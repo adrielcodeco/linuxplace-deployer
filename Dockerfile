@@ -19,7 +19,7 @@ RUN apk add --update --no-cache curl ca-certificates bash && \
     rm -f /var/cache/apk/*
 
 # Install kubectl (same version of aws esk)
-RUN apk add --update --no-cache curl && \
+RUN apk add --update --no-cache curl git openssh-client && \
     curl -LO https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
     mv kubectl /usr/bin/kubectl && \
     chmod +x /usr/bin/kubectl
@@ -34,6 +34,7 @@ RUN curl --silent --location "https://github.com/weaveworks/eksctl/releases/down
     mv /tmp/eksctl /usr/bin && \
     chmod +x /usr/bin/eksctl
 
+
 RUN echo "**** install Python ****" && \
     apk add --no-cache python3 && \
     if [ ! -e /usr/bin/python ]; then ln -sf python3 /usr/bin/python ; fi && \
@@ -44,5 +45,8 @@ RUN echo "**** install Python ****" && \
     pip3 install --no-cache --upgrade pip setuptools wheel && \
     if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi && \
     pip3 install awscli
+
+COPY ./src/deploy /usr/local/bin/deploy
+RUN chmod a+x /usr/local/bin/deploy
 
 WORKDIR /apps
