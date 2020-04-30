@@ -22,6 +22,7 @@ set -o nounset                              # Treat unset variables as an error
 TMP_CHART=./curr_chart
 
 function init(){
+  mkdir ~/.ssh
   ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
   echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa
 }
