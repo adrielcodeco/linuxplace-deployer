@@ -43,8 +43,8 @@ $0 command [params]
 
 commands:
   init
-  getchart
-  deploy -i <imagename> -n <deployname>
+  fetchchart -c <charturi>
+  deploy -i <imagename> -n <namespace> -r <deployname>
 
  -h help
 EOF
@@ -60,11 +60,12 @@ fi
 
 VERB=$1
 shift
-while getopts i:n:c:h OPCAO; do
+while getopts i:n:c:r:h OPCAO; do
      case "${OPCAO}" in
         i) IMAGENAME="${OPTARG}" ;;
-        n) RELEASE_NAME="${OPTARG}" ;;
+        r) RELEASE_NAME="${OPTARG}" ;;
         c) CHART_REPO="${OPTARG}" ;;
+        n) NAMESPACE="${OPTARG}" ;;
         h) dispHelp; exit ;;
      esac
 done
@@ -78,7 +79,7 @@ case "$VERB" in
   fetchChart $CHART_REPO
   ;;
   deploy)
-  helmdeploy ${IMAGENAME} ${RELEASE_NAME}
+  helmdeploy ${IMAGENAME} ${RELEASE_NAME} ${NAMESPACE}
   ;;
   *)
   echo "Comando invalido $VERB"
