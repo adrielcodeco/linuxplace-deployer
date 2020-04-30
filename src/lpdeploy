@@ -1,0 +1,87 @@
+#!/bin/bash -
+#===============================================================================
+#
+#          FILE: deploy.sh
+#
+#         USAGE: ./deploy.sh
+#
+#   DESCRIPTION:  deployer
+#
+#       OPTIONS: ---
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Fernando Augusto Medeiros Silva (), fams@linuxplace.com.br
+#  ORGANIZATION: Linuxplace
+#       CREATED: 28/04/2020 21:56
+#      REVISION:  ---
+#===============================================================================
+
+set -o nounset                              # Treat unset variables as an error
+
+TMP_CHART=./curr_chart
+
+function init(){
+  echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa
+}
+
+function fetchChart(){
+  CHART_REPO=$1
+  git clone $CHART_REPO ${TMP_CHART}
+}
+
+function helmdeploy(){
+  image_name=$1
+  deploy_name=$2
+  namespace=$3
+  helm install --set image=${image_name}  -f values.yaml $deploy_name ${TMP_CHART} --namespace ${namespace}
+}
+
+function dispHelp(){
+cat <<EOF
+$0 command [params]
+
+commands:
+  init
+  getchart
+  deploy -i <imagename> -n <deployname>
+
+ -h help
+EOF
+
+}
+echo ${*}
+#### comandos
+if [ $# -lt 1 ] ; then
+  dispHelp
+  exit 1
+fi
+
+
+VERB=$1
+shift
+while getopts i:n:c:h OPCAO; do
+     case "${OPCAO}" in
+        i) IMAGENAME="${OPTARG}" ;;
+        n) RELEASE_NAME="${OPTARG}" ;;
+        c) CHART_REPO="${OPTARG}" ;;
+        h) dispHelp; exit ;;
+     esac
+done
+
+
+case "$VERB" in
+  init)
+  init
+  ;;
+  fetchchart)
+  fetchChart $CHART_REPO
+  ;;
+  deploy)
+  helmdeploy ${IMAGENAME} ${RELEASE_NAME}
+  ;;
+  *)
+  echo "Comando invalido $VERB"
+  exit 1
+  ;;
+esac
