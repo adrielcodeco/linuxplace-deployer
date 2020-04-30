@@ -22,12 +22,22 @@ set -o nounset                              # Treat unset variables as an error
 TMP_CHART=./curr_chart
 
 function init(){
+  # atribui a chave para conseguir clonar repos
   mkdir ~/.ssh
   ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
   echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa
+
+  # clona o kubeconfig
+  CLUSTER_NAME=$1
+  KUBECONFIG=$2
+  mkdir ~/.kube
+  git clone $KUBECONFIG
+  cp ./agentes/clusters/${CLUSTER_NAME}/kubeconfig ~/.kube/config  
+  rm -rf ./agents
 }
 
 function fetchChart(){
+  # clona o helm chart template
   CHART_REPO=$1
   git clone $CHART_REPO ${TMP_CHART}
 }
@@ -62,12 +72,14 @@ fi
 
 VERB=$1
 shift
-while getopts i:n:c:r:h OPCAO; do
+while getopts i:n:c:k:b:r:h OPCAO; do
      case "${OPCAO}" in
         i) IMAGENAME="${OPTARG}" ;;
         r) RELEASE_NAME="${OPTARG}" ;;
         c) CHART_REPO="${OPTARG}" ;;
         n) NAMESPACE="${OPTARG}" ;;
+        k) CLUSTER_NAME="${OPTARG}" ;;
+        b) KUBECONFIG="${OPTARG}" ;;
         h) dispHelp; exit ;;
      esac
 done
@@ -75,7 +87,7 @@ done
 
 case "$VERB" in
   init)
-  init
+  init $CLUSTER_NAME $KUBECONFIG
   ;;
   fetchchart)
   fetchChart $CHART_REPO
