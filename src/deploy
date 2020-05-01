@@ -41,7 +41,7 @@ function helmdeploy(){
   echo Show Deploy
   pwd
   ls
-  helm install --set image=${image_name}  -f values.yaml $deploy_name ${TMP_CHART} --namespace ${namespace}
+  helm install --set image.repository=${image_name}  -f values.yaml $deploy_name ${TMP_CHART} --namespace ${namespace}
 }
 
 function dispHelp(){
