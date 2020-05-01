@@ -1,0 +1,93 @@
+#!/bin/bash -x
+#===============================================================================
+#
+#          FILE: assumerole.sh
+#
+#         USAGE: ./assumerole.sh set
+#
+#   DESCRIPTION:  deployer
+#
+#       OPTIONS: ---
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Rodolfo, rodolfo.mansur@linuxplace.com.br
+#  ORGANIZATION: Linuxplace
+#       CREATED: 01/05/2020 21:56
+#      REVISION:  ---
+#===============================================================================
+
+set -o nounset                              # Treat unset variables as an error
+
+
+function set_configuration(){
+	COMMIT=$1
+	VAR_AWS_ACCESS_KEY_ID=$2
+	VAR_AWS_SECRET_ACCESS_KEY=$3
+	AWS_CONFIG=$4
+
+	# Criando o diretorio de arquivos de config do AWSCLI
+	mkdir -p ~/.aws/
+
+	touch ~/.aws/config
+	touch ~/.aws/credentials
+
+	cat "$AWS_CONFIG" >> ~/.aws/config
+
+	aws --profile linear-org configure set aws_access_key_id $VAR_AWS_ACCESS_KEY_ID
+	aws --profile linear-org configure set aws_secret_access_key $VAR_AWS_SECRET_ACCESS_KEY
+
+#	# Gerando um STS para a conta do ECR
+#	touch keys.json
+#
+#	aws sts assume-role --role-arn $ROLE --role-session-name sts-${COMMIT} > keys.json
+#
+#	aws --profile linear-shr configure set aws_access_key_id $(cat ./keys.json | jq .Credentials.AccessKeyId -r)
+#	aws --profile linear-shr configure set aws_secret_access_key $(cat ./keys.json | jq .Credentials.SecretAccessKey -r)
+#
+#	rm ./keys.json
+}
+
+
+function dispHelp(){
+cat <<EOF
+$0 command [params]
+
+commands:
+  set -c <commit_sha> -a <access_key> -s <secret_key> -p <config_profile>
+
+ -h help
+EOF
+
+}
+echo ${*}
+#### comandos
+if [ $# -lt 1 ] ; then
+  dispHelp
+  exit 1
+fi
+
+
+VERB=$1
+shift
+while getopts r:c:a:s:p:h OPCAO; do
+     case "${OPCAO}" in
+        #i) IMAGENAME="${OPTARG}" ;;
+        c) COMMIT="${OPTARG}" ;;
+        a) VAR_AWS_ACCESS_KEY_ID="${OPTARG}" ;;
+        s) VAR_AWS_SECRET_ACCESS_KEY="${OPTARG}" ;;
+        p) AWS_CONFIG="${OPTARG}" ;;
+        h) dispHelp; exit ;;
+     esac
+done
+
+
+case "$VERB" in
+  set)
+  set_configuration $COMMIT $VAR_AWS_ACCESS_KEY_ID $VAR_AWS_SECRET_ACCESS_KEY $AWS_CONFIG
+  ;;
+  *)
+  echo "Comando invalido $VERB"
+  exit 1
+  ;;
+esac

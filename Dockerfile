@@ -45,6 +45,7 @@ RUN echo "**** install Python ****" && \
     pip3 install awscli
 
 COPY ./src/deploy /usr/local/bin/deploy
-RUN chmod a+x /usr/local/bin/deploy
+COPY ./src/assumerole /usr/local/bin/assumerole
+RUN chmod a+x /usr/local/bin/deploy && chmod a+x /usr/local/bin/assumerole
 
 WORKDIR /apps
