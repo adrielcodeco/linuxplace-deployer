@@ -26,14 +26,6 @@ function init(){
   mkdir ~/.ssh
   ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
   echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa
-
-  # clona o kubeconfig
-  CLUSTER_NAME=$1
-  KUBECONFIG=$2
-  mkdir ~/.kube
-  git clone $KUBECONFIG
-  cp ./agents/clusters/${CLUSTER_NAME}/kubeconfig ~/.kube/config  
-  rm -rf ./agents
 }
 
 function fetchChart(){
@@ -81,20 +73,18 @@ while getopts i:n:c:k:b:r:h OPCAO; do
         r) RELEASE_NAME="${OPTARG}" ;;
         c) CHART_REPO="${OPTARG}" ;;
         n) NAMESPACE="${OPTARG}" ;;
-        k) CLUSTER_NAME="${OPTARG}" ;;
-        b) KUBECONFIG="${OPTARG}" ;;
         h) dispHelp; exit ;;
      esac
 done
 
 # Debug
-echo Show Runner 
+echo Show Runner
 pwd
 ls
 
 case "$VERB" in
   init)
-  init $CLUSTER_NAME $KUBECONFIG
+  init
   ;;
   fetchchart)
   fetchChart $CHART_REPO
