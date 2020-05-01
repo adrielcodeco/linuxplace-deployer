@@ -32,7 +32,7 @@ function init(){
   KUBECONFIG=$2
   mkdir ~/.kube
   git clone $KUBECONFIG
-  cp ./agentes/clusters/${CLUSTER_NAME}/kubeconfig ~/.kube/config  
+  cp ./agents/clusters/${CLUSTER_NAME}/kubeconfig ~/.kube/config  
   rm -rf ./agents
 }
 
