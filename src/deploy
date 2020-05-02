@@ -34,15 +34,162 @@ function fetchChart(){
   git clone $CHART_REPO ${TMP_CHART}
 }
 
-function helmdeploy(){
-  image_name=$1
-  deploy_name=$2
-  namespace=$3
-  echo Show Deploy
-  pwd
-  ls
-  helm install --set image.repository=${image_name}  -f values.yaml $deploy_name ${TMP_CHART} --namespace ${namespace}
+function buildReleaseStatus(){
+    namespace=$1
+    deployment_name=$2
+    release_status=$(helm --namespace $namespace status "${deployment_name}" -o json 2>&1)
+
+    # Determinando se o comando funcionou
+    if echo $release_status | grep "Error" >/dev/null ; then
+      RELEASE_STATUS[error]="true";
+      RELEASE_STATUS[error_desc]=$(echo $release_status |sed -e 's/Error: //')
+      # se o erro foi de release não encontrada, retornando 1
+      if [ "${RELEASE_STATUS[error_desc]}" == "release: not found" ]; then
+        return 1
+      else
+      # Qualuer outro erro, por enquanto 2
+        return 2
+      fi
+    else
+      RELEASE_STATUS[error]="false";
+      RELEASE_STATUS[status]=${release_status}
+    fi
 }
+
+function buildDeploymentStatus(){
+    namespace=$1
+    deployment_name=$2
+    deploy_status=$(kubectl -n ${namespace} get deploy "${deployment_name}" -o json 2>&1)
+
+    # Determinando se o comando funcionou
+    if echo $deploy_status | grep "^Error" >/dev/null ; then
+      DEPLOYMENT_STATUS[error]="true";
+      DEPLOYMENT_STATUS[error_desc]=$(echo $release_status |sed -e 's/^Error//')
+      # se o erro foi de release não encontrada, retornando 1
+      if echo -E "${DEPLOYMENT_STATUS[error_desc]}" |grep "deployments.extensions \"${deployment_name}\" not found" ; then
+        return 1
+      else
+      # Qualuer outro erro, por enquanto 2
+        return 2
+      fi
+    else
+      DEPLOYMENT_STATUS[error]="false";
+      DEPLOYMENT_STATUS[status]=${deploy_status}
+    fi
+}
+
+function wait_for_deploy(){
+  namespace=$1
+  deployment_name=$2
+  revision=$3
+  buildDeploymentStatus $namespace $deployment_name
+  # tries=$((DEPLOY_TIMEOUT/20))
+  count=0
+  limit=$((DEPLOY_TIMEOUT/20))
+  while  [ "$count" -lt "$limit" ] ; do
+      buildDeploymentStatus $namespace $deployment_name
+      if [ "$(getDeployParam status.observedGeneration)" -lt $revision ];then
+        echo "wait for revision $count"
+        sleep 5
+        continue
+      fi
+      if getDeployParam 'status.conditions[1].message' | grep "successfully progressed" >/dev/null 2>&1 ; then
+        return 0
+      fi
+      echo "wait for revision $count of $limit"
+      sleep ${DEPLOY_INTERVAL}
+      count=$((count+1))
+  done
+  return 1
+}
+
+function readManifest(){
+  namespace=$1
+  release_name=$2
+  IFS=''
+  num=-1
+  while read line ;do
+    if (echo ${line} | grep "^---$" >/dev/null); then
+      num=$((num+1))
+    else
+      manifest[$num]="${manifest[${num}]}\n${line}"
+    fi
+  done <  <(helm -n ${namespace} get manifest ${release_name}})
+}
+
+function getManifestParam(){
+  param=$1
+  echo -e ${manifest[0]} |yq -r .${param}
+}
+function getDeployParam(){
+  param=$1
+  echo -E ${DEPLOYMENT_STATUS[status]} | jq -r .${param}
+}
+
+function getReleaseParam(){
+  param=$1
+  echo -E ${RELEASE_STATUS[status]} | jq -r .${param}
+}
+
+
+function helmdeploy(){
+  image_tag=$1
+  release_name=$2
+  namespace=$3
+
+  buildReleaseStatus $namespace $release_name; ret=$?
+
+  # 0 nao encontrou release
+  # 1 Encontrou release
+  # 2 Erro helm
+  case $ret in
+    0)
+      operation=install
+      #install
+      echo "Instalando $release_name com imagem=${image_tag} namespace=${namespace}"
+      helm install --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${namespace}
+      ;;
+    1)
+      operation=update
+      echo "Atualizando $deployment_name com imagem=${image_tag} namespace=${namespace}"
+      helm update --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${namespace}
+    ;;
+    *)
+      operation=error
+      echo "Erro executando helm ${RELEASE_STATUS[error_desc]}"
+      exit 1
+    ;;
+  esac
+  readManifest ${release_name}
+
+  if wait_for_deploy $(getManifestParam metadata.name) $(getReleaseParam version) ; then
+    echo "Deployment successfull!"
+    echo "Status:"
+    getDeployParam status
+    return 0
+  else
+    echo "Deployment Fail"
+    echo "Last Status:"
+    getDeployParam status
+    return 1
+  fi
+
+}
+
+function readManifest(){
+  namespace=$1
+  release_name=$2
+  IFS=''
+  num=-1
+  while read line ;do
+    if (echo ${line} | grep "^---$" >/dev/null); then
+      num=$((num+1))
+    else
+      manifest[$num]="${manifest[${num}]}\n${line}"
+    fi
+  done <  <(helm -n ${namespace} get manifest ${release_name}})
+}
+
 
 function dispHelp(){
 cat <<EOF
@@ -51,13 +198,19 @@ $0 command [params]
 commands:
   init
   fetchchart -c <charturi>
-  deploy -i <imagename> -n <namespace> -r <deployname>
+  deploy -i <imagename> -n <namespace> -r <deployment_name>
 
  -h help
 EOF
 
 }
-echo ${*}
+#### starts here
+declare -A RELEASE_STATUS
+declare -A DEPLOYMENT_STATUS
+declare DEPLOY_TIMEOUT=600
+declare DEPLOY_INTERVAL=20
+declare -a  manifest
+
 #### comandos
 if [ $# -lt 1 ] ; then
   dispHelp
@@ -77,11 +230,6 @@ while getopts i:n:c:k:b:r:h OPCAO; do
      esac
 done
 
-# Debug
-echo Show Runner
-pwd
-ls
-
 case "$VERB" in
   init)
   init
@@ -91,6 +239,8 @@ case "$VERB" in
   ;;
   deploy)
   helmdeploy ${IMAGENAME} ${RELEASE_NAME} ${NAMESPACE}
+  ret=$?
+  exit $ret
   ;;
   *)
   echo "Comando invalido $VERB"
