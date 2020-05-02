@@ -42,7 +42,7 @@ RUN echo "**** install Python ****" && \
     rm -r /usr/lib/python*/ensurepip && \
     pip3 install --no-cache --upgrade pip setuptools wheel && \
     if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi && \
-    pip3 install awscli
+    pip3 install awscli yq
 
 COPY ./src/deploy /usr/local/bin/deploy
 COPY ./src/assumerole /usr/local/bin/assumerole
