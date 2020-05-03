@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/usr/local/bin/bash
 #===============================================================================
 #
 #          FILE: deploy.sh
@@ -34,10 +34,10 @@ function fetchChart(){
   git clone $CHART_REPO ${TMP_CHART}
 }
 
+# constroi array associativo RELEASE_STATUS com dados do release.
 function buildReleaseStatus(){
-    namespace=$1
-    deployment_name=$2
-    release_status=$(helm --namespace $namespace status "${deployment_name}" -o json 2>&1)
+    deployment_name=$1
+    release_status=$(helm --namespace ${NAMESPACE} status "${deployment_name}" -o json 2>&1)
 
     # Determinando se o comando funcionou
     if echo $release_status | grep "Error" >/dev/null ; then
@@ -56,10 +56,11 @@ function buildReleaseStatus(){
     fi
 }
 
+# constroi array associativo DEPLOYMENT_STATUS com dados do release.
 function buildDeploymentStatus(){
-    namespace=$1
-    deployment_name=$2
-    deploy_status=$(kubectl -n ${namespace} get deploy "${deployment_name}" -o json 2>&1)
+
+    deployment_name=$1
+    deploy_status=$(kubectl -n ${NAMESPACE} get deploy "${deployment_name}" -o json 2>&1)
 
     # Determinando se o comando funcionou
     if echo $deploy_status | grep "^Error" >/dev/null ; then
@@ -78,48 +79,76 @@ function buildDeploymentStatus(){
     fi
 }
 
+# Verifica se o deploy funcionou
 function wait_for_deploy(){
-  namespace=$1
-  deployment_name=$2
-  revision=$3
-  buildDeploymentStatus $namespace $deployment_name
-  # tries=$((DEPLOY_TIMEOUT/20))
+  deployment_name=$1
+  review=$2
+
+  buildDeploymentStatus $deployment_name
+
   count=0
-  limit=$((DEPLOY_TIMEOUT/20))
+  # Executa x vezes dependendo do timeout e do intervalo declarado
+  limit=$((DEPLOY_TIMEOUT/DEPLOY_INTERVAL))
+
   while  [ "$count" -lt "$limit" ] ; do
-      buildDeploymentStatus $namespace $deployment_name
-      if [ "$(getDeployParam status.observedGeneration)" -lt $revision ];then
-        echo "wait for revision $count"
-        sleep 5
-        continue
-      fi
+      buildDeploymentStatus $deployment_name
+      # Testa se a revisão instalada já é a obtida no deploy
+      # curr_review=$(getDeployParam status.observedGeneration)
+      # if [ "$curr_review" -lt $review ];then
+      #   echo "wait for review $review:$curr_review $count"
+      #   sleep 5
+      #   continue
+      # elif  [ "$curr_review" -gt $review ];then
+      #   # Retorna erro se review acima do esperado. Alguem publicou outro por cima
+      #   echo "Revision upper then configured. Expected $review got "
+      #   return 1
+      # fi
+      # Se deployment ok return ok
       if getDeployParam 'status.conditions[1].message' | grep "successfully progressed" >/dev/null 2>&1 ; then
         return 0
       fi
-      echo "wait for revision $count of $limit"
+      echo "wait for review $count of $limit"
       sleep ${DEPLOY_INTERVAL}
+
+      #Verifica multiplos erros
+
+
       count=$((count+1))
   done
   return 1
 }
 
+function getPodDecribe(){
+      deployment_name=$1
+      #Verifica multiplos erros
+      replicaset=$(kubectl -n ${NAMESPACE} describe deploy "${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
+      pod=$(kubectl -n ${NAMESPACE} get pods  -o json | jq -r '
+          .items[]
+          |select (.metadata.ownerReferences[].name=="'$replicaset'")
+          |.metadata.name'|tail -n1)
+      kubectl -n ${NAMESPACE} describe pod $pod
+}
+
+# Le o Manifesto publicado
+
 function readManifest(){
-  namespace=$1
-  release_name=$2
-  IFS=''
+  release_name=$1
+
   num=-1
+  IFS=''
   while read line ;do
     if (echo ${line} | grep "^---$" >/dev/null); then
       num=$((num+1))
+      MANIFEST[$num]=""
     else
-      manifest[$num]="${manifest[${num}]}\n${line}"
+      MANIFEST[$num]="${MANIFEST[${num}]}\n${line}"
     fi
-  done <  <(helm -n ${namespace} get manifest ${release_name}})
+  done <  <(helm -n ${NAMESPACE} get manifest ${release_name} )
 }
 
 function getManifestParam(){
   param=$1
-  echo -e ${manifest[0]} |yq -r .${param}
+  echo -e ${MANIFEST[0]} |yq -r .${param}
 }
 function getDeployParam(){
   param=$1
@@ -135,24 +164,23 @@ function getReleaseParam(){
 function helmdeploy(){
   image_tag=$1
   release_name=$2
-  namespace=$3
 
-  buildReleaseStatus $namespace $release_name; ret=$?
+  buildReleaseStatus  $release_name; ret=$?
 
   # 0 nao encontrou release
   # 1 Encontrou release
   # 2 Erro helm
   case $ret in
-    0)
+    1)
       operation=install
       #install
-      echo "Instalando $release_name com imagem=${image_tag} namespace=${namespace}"
-      helm install --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${namespace}
+      echo "Instalando $release_name com imagem=${image_tag} namespace=${NAMESPACE}"
+      helm install --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
       ;;
-    1)
+    0)
       operation=update
-      echo "Atualizando $deployment_name com imagem=${image_tag} namespace=${namespace}"
-      helm update --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${namespace}
+      echo "Atualizando $deployment_name com imagem=${image_tag} namespace=${NAMESPACE}"
+      helm upgrade --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
     ;;
     *)
       operation=error
@@ -160,12 +188,15 @@ function helmdeploy(){
       exit 1
     ;;
   esac
+
   readManifest ${release_name}
+
 
   if wait_for_deploy $(getManifestParam metadata.name) $(getReleaseParam version) ; then
     echo "Deployment successfull!"
     echo "Status:"
     getDeployParam status
+    getPodDecribe $(getManifestParam metadata.name)
     return 0
   else
     echo "Deployment Fail"
@@ -175,21 +206,6 @@ function helmdeploy(){
   fi
 
 }
-
-function readManifest(){
-  namespace=$1
-  release_name=$2
-  IFS=''
-  num=-1
-  while read line ;do
-    if (echo ${line} | grep "^---$" >/dev/null); then
-      num=$((num+1))
-    else
-      manifest[$num]="${manifest[${num}]}\n${line}"
-    fi
-  done <  <(helm -n ${namespace} get manifest ${release_name}})
-}
-
 
 function dispHelp(){
 cat <<EOF
@@ -205,11 +221,12 @@ EOF
 
 }
 #### starts here
+
 declare -A RELEASE_STATUS
 declare -A DEPLOYMENT_STATUS
-declare DEPLOY_TIMEOUT=600
+declare DEPLOY_TIMEOUT=300
 declare DEPLOY_INTERVAL=20
-declare -a  manifest
+declare -a MANIFEST
 
 #### comandos
 if [ $# -lt 1 ] ; then
@@ -230,20 +247,23 @@ while getopts i:n:c:k:b:r:h OPCAO; do
      esac
 done
 
+export NAMESPACE
+echo Running in ${NAMESPACE}
+
 case "$VERB" in
   init)
-  init
+    init
   ;;
   fetchchart)
-  fetchChart $CHART_REPO
+    fetchChart $CHART_REPO
   ;;
   deploy)
-  helmdeploy ${IMAGENAME} ${RELEASE_NAME} ${NAMESPACE}
+    helmdeploy ${IMAGENAME} ${RELEASE_NAME} ${NAMESPACE}
   ret=$?
   exit $ret
   ;;
   *)
   echo "Comando invalido $VERB"
-  exit 1
+    exit 1
   ;;
 esac

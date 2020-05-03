@@ -44,7 +44,7 @@ RUN echo "**** install Python ****" && \
     if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi && \
     pip3 install awscli yq
 
-COPY ./src/deploy /usr/local/bin/deploy
+COPY ./src/deploy     /usr/local/bin/deploy
 COPY ./src/assumerole /usr/local/bin/assumerole
 RUN chmod a+x /usr/local/bin/deploy && chmod a+x /usr/local/bin/assumerole
 
