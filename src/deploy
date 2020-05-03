@@ -80,6 +80,7 @@ function buildDeploymentStatus(){
 }
 
 # Verifica se o deploy funcionou
+# Toda essa função está errada e deve ser utilizado o kubectl rollout pra monitorar o rollout :-(
 function wait_for_deploy(){
   deployment_name=$1
 
@@ -91,22 +92,11 @@ function wait_for_deploy(){
 
   while  [ "$count" -lt "$limit" ] ; do
       buildDeploymentStatus $deployment_name
-      # Testa se a revisão instalada já é a obtida no deploy
-      # curr_review=$(getDeployParam status.observedGeneration)
-      # if [ "$curr_review" -lt $review ];then
-      #   echo "wait for review $review:$curr_review $count"
-      #   sleep 5
-      #   continue
-      # elif  [ "$curr_review" -gt $review ];then
-      #   # Retorna erro se review acima do esperado. Alguem publicou outro por cima
-      #   echo "Revision upper then configured. Expected $review got "
-      #   return 1
-      # fi
       # Se deployment ok return ok
       if getDeployParam 'status.conditions[1].message' | grep "successfully progressed" >/dev/null 2>&1 ; then
         return 0
       fi
-      echo "wait for review $count of $limit"
+      echo "waiting  for $count of $limit"
       sleep ${DEPLOY_INTERVAL}
 
       #Verifica multiplos erros
