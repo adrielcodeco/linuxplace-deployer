@@ -247,8 +247,12 @@ while getopts i:n:c:k:b:r:h OPCAO; do
      esac
 done
 
-export NAMESPACE
-echo Running in ${NAMESPACE}
+if [ -n ${NAMESPACE} ];then
+  export NAMESPACE
+  echo Running in ${NAMESPACE}
+else
+  export NAMESPACE=$CI_ENVIRONMENT_SLUG
+fi
 
 case "$VERB" in
   init)
