@@ -82,7 +82,6 @@ function buildDeploymentStatus(){
 # Verifica se o deploy funcionou
 function wait_for_deploy(){
   deployment_name=$1
-  review=$2
 
   buildDeploymentStatus $deployment_name
 
@@ -237,7 +236,7 @@ fi
 
 VERB=$1
 shift
-while getopts i:n:c:k:b:r:h OPCAO; do
+while getopts i:n:c:b:r:h OPCAO; do
      case "${OPCAO}" in
         i) IMAGENAME="${OPTARG}" ;;
         r) RELEASE_NAME="${OPTARG}" ;;
