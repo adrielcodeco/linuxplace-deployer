@@ -247,7 +247,7 @@ while getopts i:n:c:k:b:r:h OPCAO; do
      esac
 done
 
-if [ -n ${NAMESPACE} ];then
+if [ ! -z "${NAMESPACE:-}" ];then
   export NAMESPACE
   echo Running in ${NAMESPACE}
 else
