@@ -34,8 +34,8 @@ function set_configuration(){
 
 	cat "$AWS_CONFIG" >> ~/.aws/config
 
-	aws --profile linear-org configure set aws_access_key_id $VAR_AWS_ACCESS_KEY_ID
-	aws --profile linear-org configure set aws_secret_access_key $VAR_AWS_SECRET_ACCESS_KEY
+	aws --profile ${ROLEBASE} configure set aws_access_key_id $VAR_AWS_ACCESS_KEY_ID
+	aws --profile ${ROLEBASE} configure set aws_secret_access_key $VAR_AWS_SECRET_ACCESS_KEY
 
 #	# Gerando um STS para a conta do ECR
 #	touch keys.json
