@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #===============================================================================
 #
 #          FILE: deploy.sh
@@ -31,7 +31,8 @@ function init(){
 function fetchChart(){
   # clona o helm chart template
   CHART_REPO=$1
-  git clone $CHART_REPO ${TMP_CHART}
+  BRANCH=$2
+  git clone $CHART_REPO -b ${BRANCH} ${TMP_CHART}
 }
 
 # constroi array associativo RELEASE_STATUS com dados do release.
@@ -231,6 +232,7 @@ while getopts i:n:c:b:r:h OPCAO; do
         i) IMAGENAME="${OPTARG}" ;;
         r) RELEASE_NAME="${OPTARG}" ;;
         c) CHART_REPO="${OPTARG}" ;;
+        b) BRANCH="${OPTARG}";;
         n) NAMESPACE="${OPTARG}" ;;
         h) dispHelp; exit ;;
      esac
@@ -248,7 +250,7 @@ case "$VERB" in
     init
   ;;
   fetchchart)
-    fetchChart $CHART_REPO
+    fetchChart $CHART_REPO ${BRANCH:-master}
   ;;
   deploy)
     helmdeploy ${IMAGENAME} ${RELEASE_NAME} ${NAMESPACE}
