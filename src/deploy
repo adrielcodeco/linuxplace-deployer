@@ -248,7 +248,7 @@ else
 fi
 # Get AwsAccount running
 
-AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 
 case "$VERB" in
   init)
