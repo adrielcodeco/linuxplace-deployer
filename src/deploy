@@ -150,7 +150,6 @@ function getReleaseParam(){
   echo -E ${RELEASE_STATUS[status]} | jq -r .${param}
 }
 
-
 function helmdeploy(){
   image_tag=$1
   release_name=$2
@@ -158,7 +157,7 @@ function helmdeploy(){
   buildReleaseStatus  $release_name; ret=$?
 
   echo "Template a ser executado"
-  helm template --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
+  helm template --set image.repository=${image_tag} --set AwsAccountId ${AWS_ACCOUNT_ID} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
 
   # 0 nao encontrou release
   # 1 Encontrou release
@@ -247,6 +246,9 @@ if [ ! -z "${NAMESPACE:-}" ];then
 else
   export NAMESPACE=$CI_ENVIRONMENT_SLUG
 fi
+# Get AwsAccount running
+
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 
 case "$VERB" in
   init)
