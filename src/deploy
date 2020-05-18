@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #===============================================================================
 #
 #          FILE: deploy.sh
@@ -167,12 +167,12 @@ function helmdeploy(){
       operation=install
       #install
       echo "Instalando $release_name com imagem=${image_tag} namespace=${NAMESPACE}"
-      helm install --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
+      helm install --set image.repository=${image_tag} --set-string AwsAccountId=${AWS_ACCOUNT_ID} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
       ;;
     0)
       operation=update
       echo "Atualizando $deployment_name com imagem=${image_tag} namespace=${NAMESPACE}"
-      helm upgrade --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
+      helm upgrade --set image.repository=${image_tag} --set-string AwsAccountId=${AWS_ACCOUNT_ID} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
     ;;
     *)
       operation=error
