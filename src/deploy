@@ -157,7 +157,7 @@ function helmdeploy(){
   buildReleaseStatus  $release_name; ret=$?
 
   echo "Template a ser executado"
-  helm template --set image.repository=${image_tag} --set AwsAccountId ${AWS_ACCOUNT_ID} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
+  helm template --set image.repository=${image_tag} --set-string AwsAccountId=${AWS_ACCOUNT_ID} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
 
   # 0 nao encontrou release
   # 1 Encontrou release
