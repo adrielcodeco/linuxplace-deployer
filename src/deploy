@@ -31,7 +31,8 @@ function init(){
 function fetchChart(){
   # clona o helm chart template
   CHART_REPO=$1
-  git clone $CHART_REPO ${TMP_CHART}
+  BRANCH=$2
+  git clone $CHART_REPO -b ${BRANCH} ${TMP_CHART}
 }
 
 # constroi array associativo RELEASE_STATUS com dados do release.
@@ -149,15 +150,14 @@ function getReleaseParam(){
   echo -E ${RELEASE_STATUS[status]} | jq -r .${param}
 }
 
-
 function helmdeploy(){
   image_tag=$1
   release_name=$2
 
-  buildReleaseStatus  $release_name; ret=$?
+  buildReleaseStatus $release_name; ret=$?
 
   echo "Template a ser executado"
-  helm template --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
+  helm template --set image.repository=${image_tag} --set-string AwsAccountId=${AWS_ACCOUNT_ID} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
 
   # 0 nao encontrou release
   # 1 Encontrou release
@@ -167,12 +167,12 @@ function helmdeploy(){
       operation=install
       #install
       echo "Instalando $release_name com imagem=${image_tag} namespace=${NAMESPACE}"
-      helm install --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
+      helm install --set image.repository=${image_tag} --set-string AwsAccountId=${AWS_ACCOUNT_ID} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
       ;;
     0)
       operation=update
       echo "Atualizando $deployment_name com imagem=${image_tag} namespace=${NAMESPACE}"
-      helm upgrade --set image.repository=${image_tag}  -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
+      helm upgrade --set image.repository=${image_tag} --set-string AwsAccountId=${AWS_ACCOUNT_ID} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
     ;;
     *)
       operation=error
@@ -234,6 +234,7 @@ while getopts i:n:c:b:r:h OPCAO; do
         i) IMAGENAME="${OPTARG}" ;;
         r) RELEASE_NAME="${OPTARG}" ;;
         c) CHART_REPO="${OPTARG}" ;;
+        b) BRANCH="${OPTARG}";;
         n) NAMESPACE="${OPTARG}" ;;
         h) dispHelp; exit ;;
      esac
@@ -246,12 +247,16 @@ else
   export NAMESPACE=$CI_ENVIRONMENT_SLUG
 fi
 
+# Get AwsAccount running
+export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+echo Running in ${AWS_ACCOUNT_ID}
+
 case "$VERB" in
   init)
     init
   ;;
   fetchchart)
-    fetchChart $CHART_REPO
+    fetchChart $CHART_REPO ${BRANCH:-master}
   ;;
   deploy)
     helmdeploy ${IMAGENAME} ${RELEASE_NAME}-master ${NAMESPACE}
