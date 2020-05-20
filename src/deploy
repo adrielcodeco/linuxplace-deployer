@@ -259,7 +259,7 @@ case "$VERB" in
     fetchChart $CHART_REPO ${BRANCH:-master}
   ;;
   deploy)
-    helmdeploy ${IMAGENAME} ${RELEASE_NAME}-${BRANCH} ${NAMESPACE}
+    helmdeploy ${IMAGENAME} ${RELEASE_NAME} ${NAMESPACE}
   ret=$?
   exit $ret
   ;;
