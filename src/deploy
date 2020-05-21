@@ -86,6 +86,11 @@ function wait_for_deploy(){
   deployment_name=$1
 
   buildDeploymentStatus $deployment_name
+  ret=$?
+  if [ "$ret" -ne 0 ]; then
+    echo "${deployment_name} não encontrado"
+    return 1
+  fi
 
   count=0
   # Executa x vezes dependendo do timeout e do intervalo declarado
