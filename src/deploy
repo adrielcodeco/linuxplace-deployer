@@ -21,6 +21,8 @@ set -o nounset                              # Treat unset variables as an error
 
 TMP_CHART=./curr_chart
 
+DEBUG=1
+
 function init(){
   # atribui a chave para conseguir clonar repos
   mkdir ~/.ssh
@@ -165,12 +167,13 @@ function getReleaseParam(){
 
 function helmdeploy(){
   image_tag=$1
+  app_name=$2
   release_name=$2
 
   buildReleaseStatus $release_name; ret=$?
 
   echo "Template a ser executado"
-  helm template --set image.repository=${image_tag} --set-string AwsAccountId=${AWS_ACCOUNT_ID} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
+  helm template --set image.repository=${image_tag} --set-string AwsAccountId=${AWS_ACCOUNT_ID} --set-string nameOverride=${app_name} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
 
   # 0 nao encontrou release
   # 1 Encontrou release
@@ -272,7 +275,7 @@ case "$VERB" in
     fetchChart $CHART_REPO ${BRANCH:-master}
   ;;
   deploy)
-    helmdeploy ${IMAGENAME} ${RELEASE_NAME} ${NAMESPACE}
+    helmdeploy ${IMAGENAME} ${APP_NAME} ${RELEASE_NAME} ${NAMESPACE}
   ret=$?
   exit $ret
   ;;
