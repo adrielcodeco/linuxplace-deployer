@@ -138,7 +138,15 @@ function readManifest(){
 
 function getManifestParam(){
   param=$1
-  echo -e ${MANIFEST[0]} |yq -r .${param}
+  kind=${2:-Deployment}
+  for ((i=0;i<${#MANIFEST[@]};i++)); do
+    echo -e ${MANIFEST[${i}]} |yq -r .kind |grep $kind
+    ret=$?
+    if [ "$ret" -ne 0 ]; then
+      continue
+    fi
+    echo -e ${MANIFEST[${i}]} |yq -r .${param}
+  done
 }
 function getDeployParam(){
   param=$1
