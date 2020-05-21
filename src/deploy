@@ -251,6 +251,7 @@ while getopts i:n:c:b:r:h OPCAO; do
         r) RELEASE_NAME="${OPTARG}" ;;
         c) CHART_REPO="${OPTARG}" ;;
         b) BRANCH="${OPTARG}";;
+        o) NAME_OVERRIDE="${OPTARG}";;
         n) NAMESPACE="${OPTARG}" ;;
         h) dispHelp; exit ;;
      esac
@@ -262,7 +263,8 @@ if [ ! -z "${NAMESPACE:-}" ];then
 else
   export NAMESPACE=$CI_ENVIRONMENT_SLUG
 fi
-
+# AppName
+APP_NAME=${NAME_OVERRIDE:-master}
 # Get AwsAccount running
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 echo Running in ${AWS_ACCOUNT_ID}
