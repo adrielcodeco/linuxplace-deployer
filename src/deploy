@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash set -x
 #===============================================================================
 #
 #          FILE: deploy.sh
@@ -19,7 +19,7 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-TMP_CHART=./curr_chart
+LOCAL_PATH_CHART=./curr_chart
 
 DEBUG=1
 
@@ -34,7 +34,7 @@ function fetchChart(){
   # clona o helm chart template
   CHART_REPO=$1
   BRANCH=$2
-  git clone $CHART_REPO -b ${BRANCH} ${TMP_CHART}
+  git clone $CHART_REPO -b ${BRANCH} ${LOCAL_PATH_CHART}
 }
 
 # constroi array associativo RELEASE_STATUS com dados do release.
@@ -61,10 +61,10 @@ function buildReleaseStatus(){
 
 # constroi array associativo DEPLOYMENT_STATUS com dados do release.
 function buildDeploymentStatus(){
-
+    set -x
     deployment_name=$1
-    deploy_status=$(kubectl -n ${NAMESPACE} get deploy "${deployment_name}" -o json 2>&1)
-
+    deploy_status=$(kn get deploy "${deployment_name}" -o json 2>&1)
+    set +x
     # Determinando se o comando funcionou
     if echo $deploy_status | grep "^Error" >/dev/null ; then
       DEPLOYMENT_STATUS[error]="true";
@@ -82,48 +82,81 @@ function buildDeploymentStatus(){
     fi
 }
 
+function getLastPod(){
+  rsname=$1
+  num=-1
+  IFS=''
+  # GET=false
+  while read line ;do
+    # $GET && echo ${line}
+    if (echo ${line} | grep "Normal.*SuccessfulCreate" >/dev/null); then
+      created_pod=$(echo ${line} | awk '{print $7}');
+      # GET=true
+    fi
+    if (echo ${line} | grep "Normal.*SuccessfulDelete" >/dev/null); then
+      deleted_pod=$(echo ${line} | awk '{print $7}');
+      if [ "${created_pod}" == "${deployment_name}" ]; then
+        created_pod=""
+      fi
+    fi
+  done <  <( kn describe rs $rsname )
+  echo $created_pod
+}
+function showPodLog(){
+  rsname=$1
+  while true; do
+    pod=$(getLastPod rsname)
+    if [ ! -z "${pod}" ] ;then
+      kn logs ${pod} -f
+    fi
+  done
+}
 # Verifica se o deploy funcionou
 # Toda essa função está errada e deve ser utilizado o kubectl rollout pra monitorar o rollout :-(
 function wait_for_deploy(){
   deployment_name=$1
+  new_rs_name=$(kn describe ${deployment_name} |grep NewReplicaSet|awk '{print $2}')
+  (showPodLog $new_rs_name )&
+  LOG_PID=$!
+  kubectl rollout $deployment_name --timeout  $DEPLOY_TIMEOUT
+  kill $LOG_PID
+  # buildDeploymentStatus $deployment_name
+  # ret=$?
+  # if [ "$ret" -ne 0 ]; then
+  #   echo "${deployment_name} não encontrado"
+  #   return 1
+  # fi
 
-  buildDeploymentStatus $deployment_name
-  ret=$?
-  if [ "$ret" -ne 0 ]; then
-    echo "${deployment_name} não encontrado"
-    return 1
-  fi
+  # count=0
+  # # Executa x vezes dependendo do timeout e do intervalo declarado
+  # limit=$((DEPLOY_TIMEOUT/DEPLOY_INTERVAL))
 
-  count=0
-  # Executa x vezes dependendo do timeout e do intervalo declarado
-  limit=$((DEPLOY_TIMEOUT/DEPLOY_INTERVAL))
+  # while  [ "$count" -lt "$limit" ] ; do
+  #     buildDeploymentStatus $deployment_name
+  #     # Se deployment ok return ok
+  #     if getDeployParam 'status.conditions[1].message' | grep "successfully progressed" >/dev/null 2>&1 ; then
+  #       return 0
+  #     fi
+  #     echo "waiting  for $count of $limit"
+  #     sleep ${DEPLOY_INTERVAL}
 
-  while  [ "$count" -lt "$limit" ] ; do
-      buildDeploymentStatus $deployment_name
-      # Se deployment ok return ok
-      if getDeployParam 'status.conditions[1].message' | grep "successfully progressed" >/dev/null 2>&1 ; then
-        return 0
-      fi
-      echo "waiting  for $count of $limit"
-      sleep ${DEPLOY_INTERVAL}
-
-      #Verifica multiplos erros
+  #     #Verifica multiplos erros
 
 
-      count=$((count+1))
-  done
-  return 1
+  #     count=$((count+1))
+  # done
+  # return 1
 }
 
 function getPodDecribe(){
       deployment_name=$1
       #Verifica multiplos erros
-      replicaset=$(kubectl -n ${NAMESPACE} describe deploy "${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
-      pod=$(kubectl -n ${NAMESPACE} get pods  -o json | jq -r '
+      replicaset=$(kn describe deploy "${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
+      pod=$(kn get pods  -o json | jq -r '
           .items[]
           |select (.metadata.ownerReferences[].name=="'$replicaset'")
           |.metadata.name'|tail -n1)
-      kubectl -n ${NAMESPACE} describe pod $pod
+      kn describe pod $pod
 }
 
 # Le o Manifesto publicado
@@ -133,6 +166,7 @@ function readManifest(){
 
   num=-1
   IFS=''
+  set +x
   while read line ;do
     if (echo ${line} | grep "^---$" >/dev/null); then
       num=$((num+1))
@@ -141,6 +175,7 @@ function readManifest(){
       MANIFEST[$num]="${MANIFEST[${num}]}\n${line}"
     fi
   done <  <(helm -n ${NAMESPACE} get manifest ${release_name} )
+  set -x
 }
 
 function getManifestParam(){
@@ -165,40 +200,54 @@ function getReleaseParam(){
   echo -E ${RELEASE_STATUS[status]} | jq -r .${param}
 }
 
-function helmdeploy(){
-  image_tag=$1
-  app_name=$2
-  release_name=$2
+function getChartParam(){
+  param=$1
+  cat ${LOCAL_PATH_CHART}/Chart.yaml | yq -r .${param}
+}
 
+function getAppProperties(){
+  param=$1
+  cat $APP_PROPERTIES | yq -r .${param}
+}
+
+function buildReleaseName(){
+  if [ ! -z "${RELEASE_NAME_OVERRIDE}" ] ; then
+    return ${RELEASE_NAME_OVERRIDE}
+  fi
+  chart_name=getChartParam name
+  release_suffix=${RELEASE_SUFFIX:-${chart_name}}
+  app_name=getAppProperties basename
+  api_version=getAppProperties apiVersion
+  return "${api_version}-${app_name}-${release_suffix}"
+}
+
+function buildValues(){
+
+  cat <<EOF
+image:
+  repository: ${REPOSITORY}
+  tag: ${TAG}
+AwsAccountId: ${AWS_ACCOUNT_ID}
+EOF
+}
+
+function helmdeploy(){
+  #FIXME checar se o chart está ok
+
+  release_name=buildReleaseName
   buildReleaseStatus $release_name; ret=$?
+  app_name=getAppProperties basename
+  name_override=""
+  if [ ! -z "$app_name" ];then
+    name_override="--set-string nameOverride=${app_name}"
+  fi
 
   echo "Template a ser executado"
-  helm template --set image.repository=${image_tag} --set-string AwsAccountId=${AWS_ACCOUNT_ID} --set-string nameOverride=${app_name} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
+  helm template -f <(buildValues) -f values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE}
 
-  # 0 nao encontrou release
-  # 1 Encontrou release
-  # 2 Erro helm
-  case $ret in
-    1)
-      operation=install
-      #install
-      echo "Instalando $release_name com imagem=${image_tag} namespace=${NAMESPACE}"
-      helm install --set image.repository=${image_tag} --set-string AwsAccountId=${AWS_ACCOUNT_ID} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
-      ;;
-    0)
-      operation=update
-      echo "Atualizando $deployment_name com imagem=${image_tag} namespace=${NAMESPACE}"
-      helm upgrade --set image.repository=${image_tag} --set-string AwsAccountId=${AWS_ACCOUNT_ID} -f values.yaml $release_name ${TMP_CHART} --namespace ${NAMESPACE}
-    ;;
-    *)
-      operation=error
-      echo "Erro executando helm ${RELEASE_STATUS[error_desc]}"
-      exit 1
-    ;;
-  esac
+  helm upgrade --install  -f <(buildValues) -f values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
 
   readManifest ${release_name}
-
 
   if wait_for_deploy $(getManifestParam metadata.name) $(getReleaseParam version) ; then
     echo "Deployment successfull!"
@@ -232,7 +281,8 @@ EOF
 
 declare -A RELEASE_STATUS
 declare -A DEPLOYMENT_STATUS
-declare DEPLOY_TIMEOUT=300
+declare DEPLOY_TIMEOUT=60s
+declare HELM_TIMEOUT=20s
 declare DEPLOY_INTERVAL=5
 declare -a MANIFEST
 
@@ -245,44 +295,63 @@ fi
 
 VERB=$1
 shift
-while getopts i:n:c:b:r:h OPCAO; do
+while getopts i:n:c:b:r:o:s:a:h OPCAO; do
      case "${OPCAO}" in
+        # imagem docker
         i) IMAGENAME="${OPTARG}" ;;
-        r) RELEASE_NAME="${OPTARG}" ;;
+        # override release name
+        r) RELEASE_NAME_OVERRIDE="${OPTARG}" ;;
+        # HELM CHART REPO
         c) CHART_REPO="${OPTARG}" ;;
-        b) BRANCH="${OPTARG}";;
-        o) NAME_OVERRIDE="${OPTARG}";;
+        # HELM CHART BRANCH
+        b) CHART_BRANCH="${OPTARG}";;
+        # RELEASE SUFFIX
+        o) RELEASE_SUFFIX="${OPTARG}";;
+        # NAMESPACE TO DEPLOY
         n) NAMESPACE="${OPTARG}" ;;
+        # SSH KEY OVERRIDE
+        s) SSH_OPT="${OPTARG}" ;;
+        a) APP_PROPERTIES="${OPTARG}" ;;
         h) dispHelp; exit ;;
+
      esac
 done
 
-if [ ! -z "${NAMESPACE:-}" ];then
-  export NAMESPACE
-  echo Running in ${NAMESPACE}
-else
-  export NAMESPACE=$CI_ENVIRONMENT_SLUG
-fi
-# AppName
-APP_NAME=${NAME_OVERRIDE:-master}
+#Init Vars
+
+# Namespace
+NAMESPACE="${NAMESPACE:-${CI_ENVIRONMENT_SLUG}}"
+export NAMESPACE
+echo Running in ${NAMESPACE}
+
+alias kn="kubectl -n $NAMESPACE"
 # Get AwsAccount running
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 echo Running in ${AWS_ACCOUNT_ID}
 
+#SSH PRIVATEKEY
+SSH_PRIVATE_KEY=${SSH_OPT:-${SSH_PRIVATE_KEY}}
+
+TAG=$(echo $IMAGENAME |cut -f2 -d:)
+REPOSITORY=$(echo $IMAGENAME |cut -f1 -d:)
+
+if [ ! -f APP_PROPERTIES ]; then
+  APP_PROPERTIES="./kubernetes/app.properties.yaml"
+fi
 case "$VERB" in
   init)
     init
   ;;
   fetchchart)
-    fetchChart $CHART_REPO ${BRANCH:-master}
+    fetchChart $CHART_REPO ${CHART_BRANCH:-master}
   ;;
   deploy)
-    helmdeploy ${IMAGENAME} ${APP_NAME} ${RELEASE_NAME} ${NAMESPACE}
+    helmdeploy
   ret=$?
   exit $ret
   ;;
   *)
-  echo "Comando invalido $VERB"
+  echo "Comando invalido ${VERB}"
     exit 1
   ;;
 esac
