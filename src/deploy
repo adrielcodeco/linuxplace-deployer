@@ -219,7 +219,7 @@ function buildReleaseName(){
   release_suffix=${RELEASE_SUFFIX:-${chart_name}}
   app_name=$(getAppProperties basename)
   api_version=$(getAppProperties apiVersion)
-  return "${api_version}-${app_name}-${release_suffix}"
+  echo "${api_version}-${app_name}-${release_suffix}"
 }
 
 function buildValues(){
