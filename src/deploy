@@ -227,10 +227,10 @@ function buildValues(){
   cat <<EOF
 image:
   repository: ${REPOSITORY}
-  tag: ${TAG}
-AwsAccountId: ${AWS_ACCOUNT_ID}
+  tag: "${TAG}""
+AwsAccountId: "${AWS_ACCOUNT_ID}""
 cd:
-  commit: ${CI_COMMIT_SHORT_SHA:-none}
+  commit: "${CI_COMMIT_SHORT_SHA:-none}"
   branch: ${CI_DEFAULT_BRANCH:-none}
   basename: ${app_name}
   reponame: ${CI_PROJECT_URL:-none}
