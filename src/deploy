@@ -252,10 +252,11 @@ function helmdeploy(){
 
   echo "Template a ser executado"
   #fixme trocar caminho do values
+  buildValues $app_name > ./ci.values
+  helm template -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE}
 
-  helm template -f <(buildValues $app_name) -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE}
 
-  helm upgrade --install  -f <(buildValues $app_name) -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
+  helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
 
   readManifest ${release_name}
 
