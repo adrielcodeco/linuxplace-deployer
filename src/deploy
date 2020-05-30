@@ -228,7 +228,7 @@ function buildValues(){
 image:
   repository: ${REPOSITORY}
   tag: "${TAG}""
-AwsAccountId: "${AWS_ACCOUNT_ID}""
+AwsAccountId: "${AWS_ACCOUNT_ID}"
 cd:
   commit: "${CI_COMMIT_SHORT_SHA:-none}"
   branch: ${CI_DEFAULT_BRANCH:-none}
