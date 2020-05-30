@@ -211,13 +211,14 @@ function getAppProperties(){
 }
 
 function buildReleaseName(){
+  RELEASE_NAME_OVERRIDE=${RELEASE_NAME_OVERRIDE:-}
   if [ ! -z "${RELEASE_NAME_OVERRIDE}" ] ; then
     return ${RELEASE_NAME_OVERRIDE}
   fi
-  chart_name=getChartParam name
+  chart_name=$(getChartParam name)
   release_suffix=${RELEASE_SUFFIX:-${chart_name}}
-  app_name=getAppProperties basename
-  api_version=getAppProperties apiVersion
+  app_name=$(getAppProperties basename)
+  api_version=$(getAppProperties apiVersion)
   return "${api_version}-${app_name}-${release_suffix}"
 }
 
@@ -234,9 +235,9 @@ EOF
 function helmdeploy(){
   #FIXME checar se o chart está ok
 
-  release_name=buildReleaseName
+  release_name=$(buildReleaseName)
   buildReleaseStatus $release_name; ret=$?
-  app_name=getAppProperties basename
+  app_name=$(getAppProperties basename)
   name_override=""
   if [ ! -z "$app_name" ];then
     name_override="--set-string nameOverride=${app_name}"
