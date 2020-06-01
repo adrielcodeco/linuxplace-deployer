@@ -63,7 +63,7 @@ function buildReleaseStatus(){
 function buildDeploymentStatus(){
     set -x
     deployment_name=$1
-    deploy_status=$(kn get deploy "${deployment_name}" -o json 2>&1)
+    deploy_status=$($KN get deploy "${deployment_name}" -o json 2>&1)
     set +x
     # Determinando se o comando funcionou
     if echo $deploy_status | grep "^Error" >/dev/null ; then
@@ -99,7 +99,7 @@ function getLastPod(){
         created_pod=""
       fi
     fi
-  done <  <( kn describe rs $rsname )
+  done <  <( $KN describe rs $rsname )
   echo $created_pod
 }
 function showPodLog(){
@@ -107,7 +107,7 @@ function showPodLog(){
   while true; do
     pod=$(getLastPod rsname)
     if [ ! -z "${pod}" ] ;then
-      kn logs ${pod} -f
+      $KN logs ${pod} -f
     fi
   done
 }
@@ -115,7 +115,7 @@ function showPodLog(){
 # Toda essa função está errada e deve ser utilizado o kubectl rollout pra monitorar o rollout :-(
 function wait_for_deploy(){
   deployment_name=$1
-  new_rs_name=$(kn describe ${deployment_name} |grep NewReplicaSet|awk '{print $2}')
+  new_rs_name=$($KN describe ${deployment_name} |grep NewReplicaSet|awk '{print $2}')
   (showPodLog $new_rs_name )&
   LOG_PID=$!
   kubectl rollout $deployment_name --timeout  $DEPLOY_TIMEOUT
@@ -151,12 +151,12 @@ function wait_for_deploy(){
 function getPodDecribe(){
       deployment_name=$1
       #Verifica multiplos erros
-      replicaset=$(kn describe deploy "${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
-      pod=$(kn get pods  -o json | jq -r '
+      replicaset=$($KN describe deploy "${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
+      pod=$($KN get pods  -o json | jq -r '
           .items[]
           |select (.metadata.ownerReferences[].name=="'$replicaset'")
           |.metadata.name'|tail -n1)
-      kn describe pod $pod
+      $KN describe pod $pod
 }
 
 # Le o Manifesto publicado
@@ -335,7 +335,7 @@ NAMESPACE="${NAMESPACE:-${CI_ENVIRONMENT_SLUG}}"
 export NAMESPACE
 echo Running in ${NAMESPACE}
 
-alias kn="kubectl -n $NAMESPACE"
+KN="kubectl -n $NAMESPACE"
 # Get AwsAccount running
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 echo Running in ${AWS_ACCOUNT_ID}
