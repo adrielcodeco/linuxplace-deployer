@@ -237,7 +237,7 @@ function helmdeploy(){
   # executar o showlogs tbm
   helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT &
   helmpid=$!
-
+  echo "Helm running in PID $helmpid"
   # Gerar o Manifesto para pegar o deploy
   sleep 5 # tempo arbitrário para esperar o deploy
   readManifest ${release_name}
@@ -250,6 +250,7 @@ function helmdeploy(){
   logging_pid=$!
 
   # espera o Helm Terminar
+  echo "Wait Helm end"
   wait $helmpid;
   helm_ret=$?
 
