@@ -236,12 +236,13 @@ function helmdeploy(){
   fi
   # Executar o helm upgrade em background ele tem timeout
   # executar o showlogs tbm
-  echo "===========================\nInstalando.....\n"
+  echo  -e "===========================\nInstalando.....\n"
   helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT &
   helmpid=$!
   echo "Helm running in PID $helmpid"
   # Gerar o Manifesto para pegar o deploy
   sleep 5 # tempo arbitrário para esperar o deploy
+
   readManifest ${release_name}
   #Detecta o nome do deployment
   deployment_name=$(getManifestParam metadata.name)
@@ -256,6 +257,7 @@ function helmdeploy(){
   echo "Wait Helm end"
   wait $helmpid;
   helm_ret=$?
+  kill $logging_pid
 
   #Constroi matriz de retorno
   buildReleaseStatus $release_name; retrelease=$?
