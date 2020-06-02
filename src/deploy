@@ -21,32 +21,43 @@ set -o nounset                              # Treat unset variables as an error
 
 LOCAL_PATH_CHART=./curr_chart
 
-DEBUG=1
 
 function init(){
   # atribui a chave para conseguir clonar repos
+  debug 1 "Configurando chave pública para SSH"
   mkdir ~/.ssh
   ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
   echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa
 }
 
+function debug(){
+  level=$1
+
+  msg=$2
+  if [ $level -le $DEBUG ]; then
+    echo -e "$(date +"%Y-%m-%d %H:%M:%S %z") $(caller 0) ${msg}" >&2
+  fi
+}
 function fetchChart(){
   # clona o helm chart template
-  CHART_REPO=$1
-  BRANCH=$2
-  git clone $CHART_REPO -b ${BRANCH} ${LOCAL_PATH_CHART}
+  chart_repo=$1
+  chart_branch=$2
+  debug 1 "Clonando chart ${chart_repo}:${chart_branch}"
+  git clone $chart_repo -b ${chart_branch} ${LOCAL_PATH_CHART}
 }
 
 # constroi array associativo RELEASE_STATUS com dados do release.
 function buildReleaseStatus(){
     deployment_name=$1
+    debug 1 "Gerando matriz de status para ${deployment_name}"
     release_status=$(helm --namespace ${NAMESPACE} status "${deployment_name}" -o json 2>&1)
-
+    debug 3 "Release Status: $release_status"
     # Determinando se o comando funcionou
     if echo $release_status | grep "Error" >/dev/null ; then
       RELEASE_STATUS[error]="true";
       RELEASE_STATUS[error_desc]=$(echo $release_status |sed -e 's/Error: //')
       # se o erro foi de release não encontrada, retornando 1
+      debug 2 "Release status error_desc: ${RELEASE_STATUS[error_desc]}"
       if [ "${RELEASE_STATUS[error_desc]}" == "release: not found" ]; then
         return 1
       else
@@ -62,12 +73,15 @@ function buildReleaseStatus(){
 # constroi array associativo DEPLOYMENT_STATUS com dados do release.
 function buildDeploymentStatus(){
     deployment_name=$1
-    deploy_status=$($KN get deploy "${deployment_name}" -o json 2>&1)
+    debug 1 "Build Deployment status para ${deployment_name}"
+    deployment_status=$($KN get deploy "${deployment_name}" -o json 2>&1)
+    degug 3 "Deployment status: ${deployment_status}"
     # Determinando se o comando funcionou
-    if echo $deploy_status | grep "^Error" >/dev/null ; then
+    if echo $deployment_status | grep "^Error" >/dev/null ; then
       DEPLOYMENT_STATUS[error]="true";
       DEPLOYMENT_STATUS[error_desc]=$(echo $release_status |sed -e 's/^Error//')
       # se o erro foi de release não encontrada, retornando 1
+      debug 2 "Deployment status error_desc: ${DEPLOYMENT_STATUS[error_desc]}"
       if echo -E "${DEPLOYMENT_STATUS[error_desc]}" |grep "deployments.extensions \"${deployment_name}\" not found" ; then
         return 1
       else
@@ -76,17 +90,19 @@ function buildDeploymentStatus(){
       fi
     else
       DEPLOYMENT_STATUS[error]="false";
-      DEPLOYMENT_STATUS[status]=${deploy_status}
+      DEPLOYMENT_STATUS[status]=${deployment_status}
     fi
 }
 
 function getLastPod(){
-  rsname=$1
+  rsname="$1"
   num=-1
   IFS=''
-  # GET=false
+  debug 1 "Get last pod to rs ${rsname}"
+  debug 3 "Running ${KN} describe rs ${rsname}:"
   while read line ;do
     # $GET && echo ${line}
+    debug 3 "${line}"
     if (echo ${line} | grep "Normal.*SuccessfulCreate" >/dev/null); then
       created_pod=$(echo ${line} | awk '{print $7}');
       # GET=true
@@ -102,34 +118,42 @@ function getLastPod(){
 }
 function showPodLog(){
   rsname=$1
+  # set -x
+  debug 1 "Show Log to rs ${rsname}"
   while true; do
     pod=$(getLastPod ${rsname})
     if [ ! -z "${pod}" ] ;then
-      eval "$KN logs ${pod} -f"
+      echo "Getting log for ${pod}"
+      eval "$KN logs ${pod}"
+      break
     fi
   done
 }
 # Verifica se o deploy funcionou
 # Toda essa função está errada e deve ser utilizado o kubectl rollout pra monitorar o rollout :-(
-function wait_for_deploy(){
-  deployment_name=$1
+# function wait_for_deploy(){
+#   deployment_name=$1
 
-  new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
-  (showPodLog $new_rs_name )&
-  LOG_PID=$!
-  kubectl rollout status Deployment/${deployment_name}
-  # --timeout  $DEPLOY_TIMEOUT
-  kill $LOG_PID
-}
+#   new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
+#   (showPodLog $new_rs_name )&
+#   LOG_PID=$!
+#   kubectl rollout status Deployment/${deployment_name}
+#   # --timeout  $DEPLOY_TIMEOUT
+#   kill $LOG_PID
+# }
 
 function getPodDecribe(){
       deployment_name=$1
       #Verifica multiplos erros
+      debug 1 "Build Pod descriptionpara status para ${deployment_name}"
+
       replicaset=$(eval "$KN describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
+      debug 1 "Replicaset: ${replicaset}"
       pod=$(eval "${KN} get pods  -o json"| jq -r '
           .items[]
           |select (.metadata.ownerReferences[].name=="'$replicaset'")
           |.metadata.name'|tail -n1)
+      debug 1 "Pod: ${pod}"
       eval "$KN describe pod $pod"
 }
 
@@ -137,11 +161,12 @@ function getPodDecribe(){
 
 function readManifest(){
   release_name=$1
-
+  debug 1 "Read Manifest to ${release_name}"
   num=-1
   IFS=''
-  set +x
+  # set +x
   while read line ;do
+    debug 3 " ${line}"
     if (echo ${line} | grep "^---$" >/dev/null); then
       num=$((num+1))
       MANIFEST[$num]=""
@@ -149,12 +174,14 @@ function readManifest(){
       MANIFEST[$num]="${MANIFEST[${num}]}\n${line}"
     fi
   done <  <(helm -n ${NAMESPACE} get manifest ${release_name} )
+
 }
 
 function getManifestParam(){
-  set +x
+  # set +x
   param=$1
   kind=${2:-Deployment}
+  debug 1 "Get manifest $param for $kind"
   for ((i=0;i<${#MANIFEST[@]};i++)); do
     echo -e ${MANIFEST[${i}]} |yq -r .kind |grep $kind >/dev/null
     ret=$?
@@ -166,27 +193,33 @@ function getManifestParam(){
 }
 function getDeployParam(){
   param=$1
+  debug 1 "Get deploy param $param"
   echo -E ${DEPLOYMENT_STATUS[status]} | jq -r .${param}
 }
 
 function getReleaseParam(){
   param=$1
+  debug 1 "Get Release Param $param"
   echo -E ${RELEASE_STATUS[status]} | jq -r .${param}
 }
 
 function getChartParam(){
   param=$1
+  debug 1 "Get Chart Param $param"
   cat ${LOCAL_PATH_CHART}/Chart.yaml | yq -r .${param}
 }
 
 function getAppProperties(){
   param=$1
+  debug 1 "Get AppPropertie Param $param"
   cat $APP_PROPERTIES | yq -r .${param}
 }
 
 function buildReleaseName(){
+  debug 1 "Build Release Name"
   RELEASE_NAME_OVERRIDE=${RELEASE_NAME_OVERRIDE:-}
   if [ ! -z "${RELEASE_NAME_OVERRIDE}" ] ; then
+    debug 1 "Release name is overrided: $RELEASE_NAME_OVERRIDE"
     return ${RELEASE_NAME_OVERRIDE}
   fi
   chart_name=$(getChartParam name)
@@ -194,11 +227,13 @@ function buildReleaseName(){
   app_name=$(getAppProperties basename)
   api_version=$(getAppProperties apiVersion)
   echo "${api_version}-${app_name}-${release_suffix}"
+  debug 1 "Release name is ${api_version}-${app_name}-${release_suffix}"
 }
 
 function buildValues(){
   app_name=$1
-  cat <<EOF
+  debug 1 "Build civalues"
+  cat <<EOF |tee civalues.$$
 image:
   repository: ${REPOSITORY}
   tag: "${TAG}"
@@ -210,6 +245,7 @@ cd:
   reponame: $(echo ${CI_PROJECT_URL:-none}|sed -Ee 's/https?:\/\///'| sed -Ee 's/[\/:]/_/g')
   group: ${GROUP_NAME:-none}
 EOF
+  debug 1 "$(cat civalues.$$)"
 }
 
 function helmdeploy(){
@@ -231,41 +267,47 @@ function helmdeploy(){
   helm template -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE}
 
   if [ "$(getReleaseParam info.status)" == "failed" ];then
-    helm delete  --namespace ${NAMESPACE}    "$release_name"
+    helm delete --namespace ${NAMESPACE} "$release_name"
   fi
+
   # Executar o helm upgrade em background ele tem timeout
   # executar o showlogs tbm
-  helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT &
-  helmpid=$!
-  echo "Helm running in PID $helmpid"
+  echo  -e "===========================\nInstalando.....\n"
+  helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
+
+  helm_ret=$?
+  #echo "Helm running in PID $helmpid"
   # Gerar o Manifesto para pegar o deploy
-  sleep 5 # tempo arbitrário para esperar o deploy
+  #sleep 2 # tempo arbitrário para esperar o deploy
+
   readManifest ${release_name}
   #Detecta o nome do deployment
   deployment_name=$(getManifestParam metadata.name)
 
   # Descobre o nome do resouce_set
-  new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
-
-  (showPodLog $new_rs_name )&
-  logging_pid=$!
+  new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep ^NewReplicaSet|awk '{print $2}')
+  #(showPodLog $new_rs_name )&
+  echo -e "======================\n Pod Log"
+  showPodLog $new_rs_name
+  #logging_pid=$!
 
   # espera o Helm Terminar
-  echo "Wait Helm end"
-  wait $helmpid;
-  helm_ret=$?
+  # echo "Wait Helm end"
+  # wait $helmpid;
+  # helm_ret=$?
+  # kill $logging_pid
 
   #Constroi matriz de retorno
   buildReleaseStatus $release_name; retrelease=$?
   # Para o logging
-  kill $logging_pid
+  #kill $logging_pid
 
   case $helm_ret in
     0)
       echo "Deployment successfull!"
       echo "Status:"
-      getDeployParam status
-      getPodDecribe $(getManifestParam metadata.name)
+      #getReleaseParam status
+      #getPodDecribe $(getManifestParam metadata.name)
       return 0
     ;;
     *)
@@ -368,6 +410,8 @@ SSH_PRIVATE_KEY=${SSH_OPT:-${SSH_PRIVATE_KEY}}
 IMAGENAME=${IMAGENAME:-none:none}
 TAG=$(echo $IMAGENAME |cut -f2 -d:)
 REPOSITORY=$(echo $IMAGENAME |cut -f1 -d:)
+
+DEBUG=${DEBUG:-0}
 
 if [ ! -f APP_PROPERTIES ]; then
   APP_PROPERTIES="./kubernetes/app.properties.yaml"
