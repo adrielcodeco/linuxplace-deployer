@@ -246,6 +246,7 @@ function helmdeploy(){
 
   # Descobre o nome do resouce_set
   new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
+
   (showPodLog $new_rs_name )&
   logging_pid=$!
 
