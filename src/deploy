@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #===============================================================================
 #
 #          FILE: deploy.sh
@@ -173,7 +173,6 @@ function readManifest(){
       MANIFEST[$num]="${MANIFEST[${num}]}\n${line}"
     fi
   done <  <(helm -n ${NAMESPACE} get manifest ${release_name} )
-  set -x
 }
 
 function getManifestParam(){
@@ -188,7 +187,6 @@ function getManifestParam(){
     fi
     echo -e ${MANIFEST[${i}]} |yq -r .${param}
   done
-  set -x
 }
 function getDeployParam(){
   param=$1
@@ -242,9 +240,7 @@ function helmdeploy(){
   #FIXME checar se o chart está ok
 
   release_name=$(buildReleaseName)
-  set +x
   buildReleaseStatus $release_name; ret=$?
-  set -x
   app_name=$(getAppProperties basename)
   groupname=$(getAppProperties groupname)
   name_override=""
@@ -263,9 +259,7 @@ function helmdeploy(){
   fi
   helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
   ret=$?
-  set +x
   readManifest ${release_name}
-  set -x
   if [ "$ret" -ne 0 ]; then
     echo "Deployment Fail"
     echo "Last Status:"
