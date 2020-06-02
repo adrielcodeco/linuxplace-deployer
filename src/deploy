@@ -264,8 +264,16 @@ function helmdeploy(){
     helm delete  --namespace ${NAMESPACE}    "$release_name"
   fi
   helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
+  ret=$?
 
   readManifest ${release_name}
+
+  if [ "$ret" -ne 0 ]; then
+    echo "Deployment Fail"
+    echo "Last Status:"
+    getDeployParam status
+    return 1
+  fi
 
   if wait_for_deploy $(getManifestParam metadata.name) $(getReleaseParam version) ; then
     echo "Deployment successfull!"
