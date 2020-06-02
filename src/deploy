@@ -227,7 +227,7 @@ function buildValues(){
   cat <<EOF
 image:
   repository: ${REPOSITORY}
-  tag: "${TAG}""
+  tag: "${TAG}"
 AwsAccountId: "${AWS_ACCOUNT_ID}"
 cd:
   commit: "${CI_COMMIT_SHORT_SHA:-none}"
@@ -343,6 +343,7 @@ echo Running in ${AWS_ACCOUNT_ID}
 #SSH PRIVATEKEY
 SSH_PRIVATE_KEY=${SSH_OPT:-${SSH_PRIVATE_KEY}}
 
+IMAGENAME=${IMAGENAME:-none:none}
 TAG=$(echo $IMAGENAME |cut -f2 -d:)
 REPOSITORY=$(echo $IMAGENAME |cut -f1 -d:)
 
