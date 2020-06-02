@@ -235,7 +235,7 @@ cd:
   commit: "${CI_COMMIT_SHORT_SHA:-none}"
   branch: ${CI_DEFAULT_BRANCH:-none}
   basename: ${app_name}
-  reponame: $(echo ${CI_PROJECT_URL:-none}|sed -Ee 's/https|http|://g'| sed -Ee 's/\//-/g')
+  reponame: $(echo ${CI_PROJECT_URL:-none}|sed -Ee 's/https?:\/\///'| sed -Ee 's/[\/:]/_/g')
   group: ${GROUP_NAME:-none}
 EOF
 }
@@ -259,7 +259,7 @@ function helmdeploy(){
   helm template -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE}
 
   if [ "$(getReleaseParam info.status)" == "failed" ];then
-    helm delete  --namespace ${NAMESPACE}  "$release_name"
+    helm delete  --namespace ${NAMESPACE}    "$release_name"
   fi
   helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
 
