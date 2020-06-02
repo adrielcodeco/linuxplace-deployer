@@ -236,6 +236,7 @@ function helmdeploy(){
   fi
   # Executar o helm upgrade em background ele tem timeout
   # executar o showlogs tbm
+  echo "===========================\nInstalando.....\n"
   helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT &
   helmpid=$!
   echo "Helm running in PID $helmpid"
