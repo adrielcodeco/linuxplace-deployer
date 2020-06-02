@@ -237,11 +237,11 @@ function helmdeploy(){
   # Executar o helm upgrade em background ele tem timeout
   # executar o showlogs tbm
   echo  -e "===========================\nInstalando.....\n"
-  helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT &
-  helmpid=$!
-  echo "Helm running in PID $helmpid"
+  helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
+  helm_ret=$?
+  #echo "Helm running in PID $helmpid"
   # Gerar o Manifesto para pegar o deploy
-  sleep 5 # tempo arbitrário para esperar o deploy
+  #sleep 5 # tempo arbitrário para esperar o deploy
 
   readManifest ${release_name}
   #Detecta o nome do deployment
@@ -250,26 +250,28 @@ function helmdeploy(){
   # Descobre o nome do resouce_set
   new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
 
-  (showPodLog $new_rs_name )&
-  logging_pid=$!
+  #(showPodLog $new_rs_name )&
+  echo -e "======================\n Pod Log"
+  showPodLog $new_rs_name
+  #logging_pid=$!
 
   # espera o Helm Terminar
-  echo "Wait Helm end"
-  wait $helmpid;
-  helm_ret=$?
-  kill $logging_pid
+  # echo "Wait Helm end"
+  # wait $helmpid;
+  # helm_ret=$?
+  # kill $logging_pid
 
   #Constroi matriz de retorno
   buildReleaseStatus $release_name; retrelease=$?
   # Para o logging
-  kill $logging_pid
+  #kill $logging_pid
 
   case $helm_ret in
     0)
       echo "Deployment successfull!"
       echo "Status:"
       #getReleaseParam status
-      getPodDecribe $(getManifestParam metadata.name)
+      #getPodDecribe $(getManifestParam metadata.name)
       return 0
     ;;
     *)
