@@ -61,10 +61,8 @@ function buildReleaseStatus(){
 
 # constroi array associativo DEPLOYMENT_STATUS com dados do release.
 function buildDeploymentStatus(){
-    set -x
     deployment_name=$1
     deploy_status=$($KN get deploy "${deployment_name}" -o json 2>&1)
-    set +x
     # Determinando se o comando funcionou
     if echo $deploy_status | grep "^Error" >/dev/null ; then
       DEPLOYMENT_STATUS[error]="true";
@@ -265,9 +263,9 @@ function helmdeploy(){
   fi
   helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
   ret=$?
-
+  set +x
   readManifest ${release_name}
-
+  set -x
   if [ "$ret" -ne 0 ]; then
     echo "Deployment Fail"
     echo "Last Status:"
