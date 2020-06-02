@@ -252,7 +252,7 @@ function helmdeploy(){
 
   # Descobre o nome do resouce_set
   set -x
-  new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
+  new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep ^NewReplicaSet|awk '{print $2}')
   set +x
   #(showPodLog $new_rs_name )&
   echo -e "======================\n Pod Log"
