@@ -97,7 +97,7 @@ function getLastPod(){
         created_pod=""
       fi
     fi
-  done <  <( $KN describe rs $rsname )
+  done <  <( eval "${KN} describe rs $rsname ")
   echo $created_pod
 }
 function showPodLog(){
