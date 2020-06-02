@@ -113,7 +113,7 @@ function showPodLog(){
 # Toda essa função está errada e deve ser utilizado o kubectl rollout pra monitorar o rollout :-(
 function wait_for_deploy(){
   deployment_name=$1
-  new_rs_name=$($KN describe ${deployment_name} |grep NewReplicaSet|awk '{print $2}')
+  new_rs_name=$( $KN describe deploy ${deployment_name} |grep NewReplicaSet|awk '{print $2}')
   (showPodLog $new_rs_name )&
   LOG_PID=$!
   kubectl rollout $deployment_name --timeout  $DEPLOY_TIMEOUT
