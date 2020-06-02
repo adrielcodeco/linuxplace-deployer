@@ -264,7 +264,7 @@ function helmdeploy(){
     0)
       echo "Deployment successfull!"
       echo "Status:"
-      getDeployParam status
+      getReleaseParam status
       getPodDecribe $(getManifestParam metadata.name)
       return 0
     ;;
