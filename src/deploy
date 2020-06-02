@@ -182,7 +182,7 @@ function getManifestParam(){
   param=$1
   kind=${2:-Deployment}
   for ((i=0;i<${#MANIFEST[@]};i++)); do
-    echo -e ${MANIFEST[${i}]} |yq -r .kind |grep $kind
+    echo -e ${MANIFEST[${i}]} |yq -r .kind |grep $kind >/dev/null
     ret=$?
     if [ "$ret" -ne 0 ]; then
       continue
