@@ -103,7 +103,7 @@ function getLastPod(){
 function showPodLog(){
   rsname=$1
   while true; do
-    pod=$(getLastPod rsname)
+    pod=$(getLastPod ${rsname})
     if [ ! -z "${pod}" ] ;then
       $KN logs ${pod} -f
     fi
