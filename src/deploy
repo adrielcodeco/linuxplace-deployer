@@ -113,8 +113,9 @@ function showPodLog(){
 # Toda essa função está errada e deve ser utilizado o kubectl rollout pra monitorar o rollout :-(
 function wait_for_deploy(){
   deployment_name=$1
-  set -x
+
   new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
+  set -x
   (showPodLog $new_rs_name )&
   LOG_PID=$!
   kubectl rollout status Deployment/${deployment_name}
@@ -152,12 +153,12 @@ function wait_for_deploy(){
 function getPodDecribe(){
       deployment_name=$1
       #Verifica multiplos erros
-      replicaset=$($KN describe deploy "${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
-      pod=$($KN get pods  -o json | jq -r '
+      replicaset=$(eval "$KN describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
+      pod=$(eval "${KN} get pods  -o json"| jq -r '
           .items[]
           |select (.metadata.ownerReferences[].name=="'$replicaset'")
           |.metadata.name'|tail -n1)
-      $KN describe pod $pod
+      eval "$KN describe pod $pod"
 }
 
 # Le o Manifesto publicado
