@@ -179,6 +179,7 @@ function readManifest(){
 }
 
 function getManifestParam(){
+  set +x
   param=$1
   kind=${2:-Deployment}
   for ((i=0;i<${#MANIFEST[@]};i++)); do
@@ -189,6 +190,7 @@ function getManifestParam(){
     fi
     echo -e ${MANIFEST[${i}]} |yq -r .${param}
   done
+  set -x
 }
 function getDeployParam(){
   param=$1
