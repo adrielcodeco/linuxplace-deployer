@@ -117,7 +117,7 @@ function wait_for_deploy(){
   new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
   (showPodLog $new_rs_name )&
   LOG_PID=$!
-  kubectl rollout $deployment_name
+  kubectl rollout Deployment/${deployment_name}
   # --timeout  $DEPLOY_TIMEOUT
   kill $LOG_PID
   set +x
