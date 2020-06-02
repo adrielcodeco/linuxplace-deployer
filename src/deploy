@@ -270,6 +270,9 @@ function helmdeploy(){
     return 1
   fi
   readManifest ${release_name}
+  set -x
+  getManifestParam metadata.name
+  set +x
   if wait_for_deploy $(getManifestParam metadata.name) $(getReleaseParam version) ; then
     echo "Deployment successfull!"
     echo "Status:"
