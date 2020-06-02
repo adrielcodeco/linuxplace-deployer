@@ -233,7 +233,7 @@ cd:
   commit: "${CI_COMMIT_SHORT_SHA:-none}"
   branch: ${CI_DEFAULT_BRANCH:-none}
   basename: ${app_name}
-  reponame: ${CI_PROJECT_URL:-none}
+  reponame: $(echo ${CI_PROJECT_URL:-none}|sed -e 's/(http:|\/:)//g)'
   group: ${GROUP_NAME:-none}
 EOF
 }
