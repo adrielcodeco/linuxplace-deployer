@@ -259,7 +259,7 @@ function helmdeploy(){
   helm template -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE}
 
   if [ "$(getReleaseParam info.status)" == "failed" ];then
-    helm delete "$app_name"
+    helm delete "$release_name"
   fi
   helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
 
