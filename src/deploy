@@ -115,39 +115,11 @@ function wait_for_deploy(){
   deployment_name=$1
 
   new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
-  set -x
   (showPodLog $new_rs_name )&
   LOG_PID=$!
   kubectl rollout status Deployment/${deployment_name}
   # --timeout  $DEPLOY_TIMEOUT
   kill $LOG_PID
-  set +x
-  # buildDeploymentStatus $deployment_name
-  # ret=$?
-  # if [ "$ret" -ne 0 ]; then
-  #   echo "${deployment_name} não encontrado"
-  #   return 1
-  # fi
-
-  # count=0
-  # # Executa x vezes dependendo do timeout e do intervalo declarado
-  # limit=$((DEPLOY_TIMEOUT/DEPLOY_INTERVAL))
-
-  # while  [ "$count" -lt "$limit" ] ; do
-  #     buildDeploymentStatus $deployment_name
-  #     # Se deployment ok return ok
-  #     if getDeployParam 'status.conditions[1].message' | grep "successfully progressed" >/dev/null 2>&1 ; then
-  #       return 0
-  #     fi
-  #     echo "waiting  for $count of $limit"
-  #     sleep ${DEPLOY_INTERVAL}
-
-  #     #Verifica multiplos erros
-
-
-  #     count=$((count+1))
-  # done
-  # return 1
 }
 
 function getPodDecribe(){
@@ -261,34 +233,65 @@ function helmdeploy(){
   if [ "$(getReleaseParam info.status)" == "failed" ];then
     helm delete  --namespace ${NAMESPACE}    "$release_name"
   fi
-  helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
-  ret=$?
+  # Executar o helm upgrade em background ele tem timeout
+  # executar o showlogs tbm
+  helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT &
+  helmpid=$!
 
-  if [ "$ret" -ne 0 ]; then
+  # Gerar o Manifesto para pegar o deploy
+  sleep 5 # tempo arbitrário para esperar o deploy
+  readManifest ${release_name}
+  #Detecta o nome do deployment
+  deployment_name=$(getManifestParam metadata.name)
+
+  # Descobre o nome do resouce_set
+  new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
+  (showPodLog $new_rs_name )&
+  logging_pid=$!
+
+  # espera o Helm Terminar
+  wait helmpid;
+  helm_ret=$?
+
+  #Constroi matriz de retorno
+  buildReleaseStatus $release_name; retrelease=$?
+  # Para o logging
+  kill $logging_pid
+
+  case $helm_ret in
+    0)
+      echo "Deployment successfull!"
+      echo "Status:"
+      getDeployParam status
+      getPodDecribe $(getManifestParam metadata.name)
+      return 0
+    ;;
+    *)
     echo "Helm Deploy Fail"
     echo "Last Status:"
-    buildReleaseStatus $release_name; ret=$?
     echo -e $(getReleaseParam status)
     return 1
-  fi
+    ;;
+  esac
 
-  buildReleaseStatus $release_name; ret=$?
-  readManifest ${release_name}
-  set -x
-  getManifestParam metadata.name
-  set +x
-  if wait_for_deploy $(getManifestParam metadata.name) $(getReleaseParam version) ; then
-    echo "Deployment successfull!"
-    echo "Status:"
-    getDeployParam status
-    getPodDecribe $(getManifestParam metadata.name)
-    return 0
-  else
-    echo "Deployment Fail"
-    echo "Last Status:"
-    getDeployParam status
-    return 1
-  fi
+  #   return 1
+  # fi
+
+  # readManifest ${release_name}
+  # getManifestParam metadata.name
+
+  # if wait_for_deploy $(getManifestParam metadata.name) $(getReleaseParam version) ; then
+  #   echo "Deployment successfull!"
+  #   echo "Status:"
+  #   getDeployParam status
+  #   getPodDecribe $(getManifestParam metadata.name)
+  #   return 0
+  # else
+  #   echo "Deployment Fail"
+  #   echo "Last Status:"
+  #   getDeployParam status
+  #   return 1
+  # fi
 
 }
 
