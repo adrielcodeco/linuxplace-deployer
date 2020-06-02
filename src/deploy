@@ -82,7 +82,7 @@ function buildDeploymentStatus(){
 
 
 function getLastPod(){
-  rsname=$1
+  rsname="$1"
   num=-1
   IFS=''
   # GET=false
