@@ -259,14 +259,15 @@ function helmdeploy(){
   fi
   helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
   ret=$?
-  readManifest ${release_name}
+
+  buildReleaseStatus $release_name; ret=$?
   if [ "$ret" -ne 0 ]; then
-    echo "Deployment Fail"
+    echo "Helm Deploy Fail"
     echo "Last Status:"
-    getDeployParam status
+    echo -e $(getReleaseParam status)
     return 1
   fi
-
+  readManifest ${release_name}
   if wait_for_deploy $(getManifestParam metadata.name) $(getReleaseParam version) ; then
     echo "Deployment successfull!"
     echo "Status:"
