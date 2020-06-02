@@ -250,7 +250,7 @@ function helmdeploy(){
   logging_pid=$!
 
   # espera o Helm Terminar
-  wait helmpid;
+  wait $helmpid;
   helm_ret=$?
 
   #Constroi matriz de retorno
