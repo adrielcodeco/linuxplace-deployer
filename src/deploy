@@ -252,6 +252,7 @@ function helmdeploy(){
 
   echo "Template a ser executado"
   #fixme trocar caminho do values
+  buildValues $app_name
   buildValues $app_name > ./ci.values
   helm template -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE}
 
