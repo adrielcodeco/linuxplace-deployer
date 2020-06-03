@@ -93,7 +93,6 @@ function buildDeploymentStatus(){
     fi
 }
 
-
 function getLastPod(){
   rsname="$1"
   num=-1
@@ -161,7 +160,7 @@ function getPodDecribe(){
 
 function readManifest(){
   release_name=$1
-  debug "Read Manifest to ${release_name}"
+  debug 1 "Read Manifest to ${release_name}"
   num=-1
   IFS=''
   # set +x
@@ -267,12 +266,14 @@ function helmdeploy(){
   helm template -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE}
 
   if [ "$(getReleaseParam info.status)" == "failed" ];then
-    helm delete  --namespace ${NAMESPACE}    "$release_name"
+    helm delete --namespace ${NAMESPACE} "$release_name"
   fi
+
   # Executar o helm upgrade em background ele tem timeout
   # executar o showlogs tbm
   echo  -e "===========================\nInstalando.....\n"
   helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
+
   helm_ret=$?
   #echo "Helm running in PID $helmpid"
   # Gerar o Manifesto para pegar o deploy
