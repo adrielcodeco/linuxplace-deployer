@@ -109,6 +109,7 @@ function showPodLog(){
     pod=$(getLastPod ${rsname})
     if [ ! -z "${pod}" ] ;then
       eval "$KN logs ${pod}"
+      break
     fi
   done
   # set +x
