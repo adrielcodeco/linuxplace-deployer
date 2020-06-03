@@ -103,7 +103,7 @@ function getLastPod(){
 }
 function showPodLog(){
   rsname=$1
-  set -x
+  # set -x
   while true; do
 
     pod=$(getLastPod ${rsname})
@@ -111,7 +111,7 @@ function showPodLog(){
       eval "$KN logs ${pod}"
     fi
   done
-  set +x
+  # set +x
 }
 # Verifica se o deploy funcionou
 # Toda essa função está errada e deve ser utilizado o kubectl rollout pra monitorar o rollout :-(
@@ -144,7 +144,7 @@ function readManifest(){
 
   num=-1
   IFS=''
-  set +x
+  # set +x
   while read line ;do
     if (echo ${line} | grep "^---$" >/dev/null); then
       num=$((num+1))
@@ -156,7 +156,7 @@ function readManifest(){
 }
 
 function getManifestParam(){
-  set +x
+  # set +x
   param=$1
   kind=${2:-Deployment}
   for ((i=0;i<${#MANIFEST[@]};i++)); do
