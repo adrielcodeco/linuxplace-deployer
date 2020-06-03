@@ -166,7 +166,7 @@ function readManifest(){
   IFS=''
   # set +x
   while read line ;do
-    debug 3 $line
+    debug 3 " ${line}"
     if (echo ${line} | grep "^---$" >/dev/null); then
       num=$((num+1))
       MANIFEST[$num]=""
