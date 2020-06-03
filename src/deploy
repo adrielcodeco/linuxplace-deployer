@@ -105,14 +105,13 @@ function showPodLog(){
   rsname=$1
   # set -x
   while true; do
-
     pod=$(getLastPod ${rsname})
     if [ ! -z "${pod}" ] ;then
       eval "$KN logs ${pod}"
       break
     fi
   done
-  # set +x
+  echo fim podlog
 }
 # Verifica se o deploy funcionou
 # Toda essa função está errada e deve ser utilizado o kubectl rollout pra monitorar o rollout :-(
