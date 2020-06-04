@@ -1,8 +1,9 @@
-import os, sys, getopt 
+import os, sys, getopt, shlex
 import subprocess
 
 """ Variaveis Globais"""
 LOCAL_PATH_CHART = "./curr_chart"
+DEPLOYMENT_STATUS = {}
 
 
 """ Funcao generica para uso de git
@@ -38,29 +39,80 @@ def fetch_chart(repo, branch):
 
 
 
-def cat_yq(param, file, path=LOCAL_PATH_CHART):
+def yq(path_file, param):
+    # monta a query
+    cmd = ['yq'] + ['r'] + [path_file] + [param]
+    #print "COMANDO YQ: " + str(cmd)
+    # processa o comando e captura o resultado
+    result = subprocess.check_output(cmd)
+
+    # retira o \n no final 
+    return result[:-1]
+
+
+def get_release_name(release_suffix, app_properties):
+    # prefix
+    api_version = yq(app_properties, "apiVersion")
+
+    # mid
+    app_name = yq(app_properties, "basename")
+
+    #sufix
+    suffix = release_suffix
+    if not suffix: 
+        suffix = yq(LOCAL_PATH_CHART + "/Chart.yaml", "name")
+
+    return api_version+"-"+app_name+"-"+suffix
+
     
-    #file = os.popen('cat '+ path + file).read()
+def build_release_status(deploy_name, namespace):
+    cmd = ['helm'] + ['--namespace'] + [namespace] + ["status"] + [deploy_name] + ["-o"] + ["json"] 
+    #print "COMANDO HELM: " + str(cmd)
 
-    #cmd = ['cat'] + [path + file] + [" | yq -r ."+ param]
-    #cmd = ['cat'] + [path + file ] #+ " | yq -r ."+ param]
-    cmd = ['cat'] + [path + file] + ['|']+ ['grep'] + ['name']
-    print cmd
-    a = subprocess.check_call(cmd, shell=True)
-    #list_files = subprocess.run(["ls", "-l"])
+    deploy_status_result = ""
+    try:
+        deploy_status_result = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError, e:
+        deploy_status_result = e.output
+
+    deploy_status_result = deploy_status_result[:-1]
+
+    global DEPLOYMENT_STATUS
+    if "Error" in deploy_status_result:
+        #possui erro
+        DEPLOYMENT_STATUS = {'error':'true', 'status': deploy_status_result[7:]}
+        if "release: not found" in deploy_status_result:
+            return 1
+        else:
+            #TODO
+            return 2
+    else:
+        #nao possui erro
+        DEPLOYMENT_STATUS = {'error':'false', 'status': deploy_status_result}
+        return 0
 
 
-def get_release_name(release_suffix):
-    cat_yq("name", "/Chart.yaml")
-    
 
-def helm_deploy(release_name_override, release_suffix):
-
+def helm_deploy(release_name_override, release_suffix, app_properties, namespace):
     # Etapa 1: chegar estado atual
+    release_name = ""
     if release_name_override: 
         release_name = release_name_override
     else:
-        release_name = get_release_name(release_suffix)
+        release_name = get_release_name(release_suffix, app_properties)
+
+    build_release_status(release_name, namespace)
+
+    app_name = yq(app_properties, "basename")
+    group_name = yq(app_properties, "groupname")
+
+    name_override_cmd = ""
+    if not app_name:
+        name_override_cmd = "--set-string nameOverride="+app_name
+
+    print ""
+    print "Template a ser executado"
+    exit (2)
     # Etapa 2: fazer um helm upgrade --install
 
     # Etapa 3: validar o deploy
@@ -79,7 +131,7 @@ def help():
 def main(argv):
     try:
         # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-        opts, args = getopt.getopt(argv,"h:b:r:v:o:c:")
+        opts, args = getopt.getopt(argv,"h:b:r:n:v:a:o:c:")
     except getopt.GetoptError:
         help()
 
@@ -91,6 +143,8 @@ def main(argv):
     chart_repo = ""
     release_name_override = ""
     release_suffix = ""
+    app_properties = ""
+    namespace = ""
 
     for opt, arg in opts:
         print opt + " " + arg
@@ -102,10 +156,14 @@ def main(argv):
             chart_repo = arg
         elif opt == "-b":
             chart_branch = arg
+        elif opt == "-a":
+            app_properties = arg
         elif opt == "-r":
             release_name_override = arg
         elif opt == "-o":
             release_suffix = arg
+        elif opt == "-n":
+            namespace = arg
         else: 
             print "parametro incorreto"
             help()
@@ -113,12 +171,17 @@ def main(argv):
     if verb == "init":
         init_key()
     elif verb == "fetchchart":
-        if chart_repo == "":
-            print "parametro -c invalido"
+        # se vazio
+        if not chart_repo:
+            print "parametro invalido"
             help()
         fetch_chart(chart_repo, chart_branch)
     elif verb == "deploy":
-        helm_deploy(release_name_override, release_suffix)
+        # se algum vazio
+        if not app_properties or not namespace:
+            print "parametro invalido"
+            help()
+        helm_deploy(release_name_override, release_suffix, app_properties, namespace)
     elif verb == "":
         print "verbo inexistente"
         help()
