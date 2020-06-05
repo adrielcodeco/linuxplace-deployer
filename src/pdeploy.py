@@ -1,9 +1,9 @@
-import os, sys, getopt, shlex
-import subprocess
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-""" Variaveis Globais"""
-LOCAL_PATH_CHART = "./curr_chart"
-DEPLOYMENT_STATUS = {}
+import os, sys, getopt, shlex, boto3, re
+import subprocess
+import jq
 
 
 """ Funcao generica para uso de git
@@ -39,9 +39,9 @@ def fetch_chart(repo, branch):
 
 
 
-def yq(path_file, param):
+def get_yq(path_file, key):
     # monta a query
-    cmd = ['yq'] + ['r'] + [path_file] + [param]
+    cmd = ['yq'] + ['r'] + [path_file] + [key]
     #print "COMANDO YQ: " + str(cmd)
     # processa o comando e captura o resultado
     result = subprocess.check_output(cmd)
@@ -52,21 +52,21 @@ def yq(path_file, param):
 
 def get_release_name(release_suffix, app_properties):
     # prefix
-    api_version = yq(app_properties, "apiVersion")
+    api_version = get_yq(app_properties, "apiVersion")
 
     # mid
-    app_name = yq(app_properties, "basename")
+    app_name = get_yq(app_properties, "basename")
 
     #sufix
     suffix = release_suffix
     if not suffix: 
-        suffix = yq(LOCAL_PATH_CHART + "/Chart.yaml", "name")
+        suffix = get_yq(LOCAL_PATH_CHART + "/Chart.yaml", "name")
 
     return api_version+"-"+app_name+"-"+suffix
 
     
-def build_release_status(deploy_name, namespace):
-    cmd = ['helm'] + ['--namespace'] + [namespace] + ["status"] + [deploy_name] + ["-o"] + ["json"] 
+def build_release_status(deploy_name):
+    cmd = ['helm'] + ['--namespace'] + [NAMESPACE] + ["status"] + [deploy_name] + ["-o"] + ["json"] 
     #print "COMANDO HELM: " + str(cmd)
 
     deploy_status_result = ""
@@ -77,10 +77,10 @@ def build_release_status(deploy_name, namespace):
 
     deploy_status_result = deploy_status_result[:-1]
 
-    global DEPLOYMENT_STATUS
+    global RELEASE_STATUS
     if "Error" in deploy_status_result:
         #possui erro
-        DEPLOYMENT_STATUS = {'error':'true', 'status': deploy_status_result[7:]}
+        RELEASE_STATUS = {'error':'true', 'status': deploy_status_result[7:]}
         if "release: not found" in deploy_status_result:
             return 1
         else:
@@ -88,36 +88,125 @@ def build_release_status(deploy_name, namespace):
             return 2
     else:
         #nao possui erro
-        DEPLOYMENT_STATUS = {'error':'false', 'status': deploy_status_result}
+        RELEASE_STATUS = {'error':'false', 'status': deploy_status_result}
         return 0
 
+def set_yq(path_file, key, value):
+    # monta a query
+    cmd = ['yq'] + ['w'] + ['-i'] + [path_file] + [key] + [value]
+    #print "COMANDO YQ: " + str(cmd)
+    # processa o comando e captura o resultado
+    subprocess.check_call(cmd)
 
 
-def helm_deploy(release_name_override, release_suffix, app_properties, namespace):
+def build_values(app_name):
+
+    if os.path.exists(LOCAL_CI_VALUES):
+        os.remove(LOCAL_CI_VALUES)
+
+    open(LOCAL_CI_VALUES, 'a').close()
+
+    set_yq(LOCAL_CI_VALUES, "image.repository", REPOSITORY)
+    set_yq(LOCAL_CI_VALUES, "image.tag", TAG)
+
+    set_yq(LOCAL_CI_VALUES, "AwsAccountId", AWS_ACCOUNT_ID)
+
+    set_yq(LOCAL_CI_VALUES, "cd.commit", "TODO")
+    set_yq(LOCAL_CI_VALUES, "cd.branch", "TODO")
+    set_yq(LOCAL_CI_VALUES, "cd.basename", app_name)
+    set_yq(LOCAL_CI_VALUES, "cd.reponame", "TODO")
+    set_yq(LOCAL_CI_VALUES, "cd.group", "TODO")    
+
+
+def helm_template(release_name,name_override_cmd):
+    if name_override_cmd:
+        cmd = ["helm"]+["template"]+["-f"]+[LOCAL_CI_VALUES]+["-f"]+["./kubernetes/values.yaml"]+[release_name]+[LOCAL_PATH_CHART]+["--namespace"]+[NAMESPACE]+name_override_cmd
+    else:
+        cmd = ["helm"]+["template"]+["-f"]+[LOCAL_CI_VALUES]+["-f"]+["./kubernetes/values.yaml"]+[release_name]+[LOCAL_PATH_CHART]+["--namespace"]+[NAMESPACE]
+
+    
+    print "COMANDO HELM: " + str(cmd)
+    subprocess.check_call(cmd)
+    print ""
+
+def helm_delete(release_name):
+    cmd = ["helm"]+["delete"]+[release_name]+["--namespace"]+[NAMESPACE]
+    
+    #print "COMANDO HELM: " + str(cmd)
+    subprocess.check_call(cmd)
+    print 
+
+
+def helm_upgrade(release_name):
+    # parent is not 0
+    # child is 0
+    i_am_parent = os.fork()
+
+    if not i_am_parent:
+        print "PING"
+        cmd = ["helm"]+["upgrade"]+["--install"]+["-f"]+[LOCAL_CI_VALUES]+["-f"]+["./kubernetes/values.yaml"]+[release_name]+[LOCAL_PATH_CHART]+["--namespace"]+[NAMESPACE]+["--wait"]+["--timeout"]+[HELM_TIMEOUT]#+["&"]
+    
+        #print "COMANDO HELM: " + str(cmd)
+        subprocess.check_call(cmd)
+    else:
+        print "PONG"
+
+def get_jq(json, key):
+    # TODO testar se ja tiver um deploy
+    ret = ""
+    try:
+        print jq.first(key, json)
+        ret = "trocar"
+    except Exception as e:
+        print "asdfk"
+        ret = ""
+    
+    exit(0)
+    # TODO
+    return ret
+
+
+def helm_deploy(release_name_override, release_suffix, app_properties):
     # Etapa 1: chegar estado atual
+    # constoi o nome do deploy
     release_name = ""
     if release_name_override: 
         release_name = release_name_override
     else:
         release_name = get_release_name(release_suffix, app_properties)
 
-    build_release_status(release_name, namespace)
+    # Recupera o status do deploy atual, se tiver
+    build_release_status(release_name)
 
-    app_name = yq(app_properties, "basename")
-    group_name = yq(app_properties, "groupname")
+    # Recupera nomes dentro do arquivo propeties no repo do ms
+    app_name = get_yq(app_properties, "basename")
+    group_name = get_yq(app_properties, "groupname")
 
     name_override_cmd = ""
-    if not app_name:
-        name_override_cmd = "--set-string nameOverride="+app_name
+    if app_name:
+        name_override_cmd = ["--set-string"]+["nameOverride="+app_name]
+
+    build_values(app_name)
 
     print ""
     print "Template a ser executado"
-    exit (2)
+    #helm_template(release_name, name_override_cmd)
+
+    # se ja existir um deploy com mas no estado de failed, remove-o
+    # TODO testar quando tiver deploy antes
+    if get_jq(RELEASE_STATUS['status'], "info.status") == "failed":
+        print "Deletando o Deploy anterior que estava Failed"
+        helm_delete(release_name)
+
     # Etapa 2: fazer um helm upgrade --install
+    helm_upgrade(release_name)
 
     # Etapa 3: validar o deploy
 
 
+    print "ESPERANDO"
+    os.wait()
+    exit(12)
 
 """ ================== """
 
@@ -128,10 +217,48 @@ def help():
     sys.exit(1)
 
 
+""" Variaveis Globais"""
+# Path para clone do helm chart
+LOCAL_PATH_CHART = "./curr_chart"
+# Local do ci_default.yaml
+LOCAL_CI_VALUES  = "./ci.values"
+# Dicionario para armazenar status de deployment
+RELEASE_STATUS = {}
+#AWS Account
+AWS_ACCOUNT_ID = ""
+# Repositorio
+REPOSITORY = ""
+NAMESPACE = ""
+# TAG
+TAG = ""
+HELM_TIMEOUT = "20s"
+
+def init_deploy(image_name):
+    global AWS_ACCOUNT_ID
+    global TAG
+    global REPOSITORY
+
+    sts = boto3.client('sts')
+    resp = sts.get_caller_identity()
+
+    AWS_ACCOUNT_ID = resp["Account"]
+    print "Running in " + AWS_ACCOUNT_ID
+    
+    # se variavel vazia
+    if not image_name:
+        TAG = "none"
+        REPOSITORY = "none"
+    else:
+        # usa regex pra fazer split via ":"
+        splited = re.split(":", image_name)
+        REPOSITORY = splited[0]
+        TAG = splited[1]
+
+
 def main(argv):
     try:
         # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-        opts, args = getopt.getopt(argv,"h:b:r:n:v:a:o:c:")
+        opts, args = getopt.getopt(argv,"h:i:b:r:n:v:a:o:c:")
     except getopt.GetoptError:
         help()
 
@@ -144,44 +271,54 @@ def main(argv):
     release_name_override = ""
     release_suffix = ""
     app_properties = ""
-    namespace = ""
+    global NAMESPACE
+    image_name = ""
 
     for opt, arg in opts:
         print opt + " " + arg
-        if opt == "-h":
-            help()
-        elif opt == "-v":
-            verb = arg
-        elif opt == "-c":
-            chart_repo = arg
+        if opt == "-a":
+            app_properties = arg
         elif opt == "-b":
             chart_branch = arg
-        elif opt == "-a":
-            app_properties = arg
-        elif opt == "-r":
-            release_name_override = arg
+        elif opt == "-c":
+            chart_repo = arg
+        elif opt == "-h":
+            help()
+        elif opt == "-i":
+            image_name = arg
+        elif opt == "-n":
+            NAMESPACE = arg
         elif opt == "-o":
             release_suffix = arg
-        elif opt == "-n":
-            namespace = arg
+        elif opt == "-r":
+            release_name_override = arg
+        elif opt == "-v":
+            verb = arg
         else: 
             print "parametro incorreto"
             help()
 
     if verb == "init":
         init_key()
+
     elif verb == "fetchchart":
         # se vazio
         if not chart_repo:
             print "parametro invalido"
             help()
+
         fetch_chart(chart_repo, chart_branch)
+
     elif verb == "deploy":
         # se algum vazio
-        if not app_properties or not namespace:
+        if not app_properties or not NAMESPACE:
             print "parametro invalido"
             help()
-        helm_deploy(release_name_override, release_suffix, app_properties, namespace)
+
+        init_deploy(image_name)
+
+        helm_deploy(release_name_override, release_suffix, app_properties)
+
     elif verb == "":
         print "verbo inexistente"
         help()
