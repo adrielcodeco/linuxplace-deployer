@@ -119,7 +119,7 @@ function getLastPod(){
 function showPodLog(){
   rsname=$1
   # set -x
-  debug 1 "Show Log to rs ${rsname}"
+  debug 1 "Show Log for pods in  ${rsname}"
   while true; do
     pod=$(getLastPod ${rsname})
     if [ ! -z "${pod}" ] ;then
