@@ -357,7 +357,7 @@ EOF
 declare -A RELEASE_STATUS
 declare -A DEPLOYMENT_STATUS
 declare DEPLOY_TIMEOUT=60s
-declare HELM_TIMEOUT=20s
+declare HELM_TIMEOUT=40s
 declare DEPLOY_INTERVAL=5
 declare -a MANIFEST
 
@@ -382,6 +382,12 @@ while getopts i:n:c:b:r:o:s:a:h OPCAO; do
         b) CHART_BRANCH="${OPTARG}";;
         # RELEASE SUFFIX
         o) RELEASE_SUFFIX="${OPTARG}";;
+        t)  TIMEOUT="${OPTARG}"
+            DEPLOY_TIMEOUT=$TIMEOUT
+            HELM_TIMEOUT=$((DEPLOY_TIMEOUT-10))
+            DEPLOY_TIMEOUT=${DEPLOY_TIMEOUT}s
+            HELM_TIMEOUT=${HELM_TIMEOUT}s
+        ;;
         # NAMESPACE TO DEPLOY
         n) NAMESPACE="${OPTARG}" ;;
         # SSH KEY OVERRIDE
