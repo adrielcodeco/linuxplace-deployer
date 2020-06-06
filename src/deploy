@@ -123,6 +123,7 @@ function showPodLog(){
   while true; do
     pod=$(getLastPod ${rsname})
     if [ ! -z "${pod}" ] ;then
+      sleep 5
       echo "Getting log for ${pod}"
       eval "$KN logs ${pod}"
       sleep 5
