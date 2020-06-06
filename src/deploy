@@ -125,6 +125,7 @@ function showPodLog(){
     if [ ! -z "${pod}" ] ;then
       echo "Getting log for ${pod}"
       eval "$KN logs ${pod}"
+      sleep 5
       break
     fi
   done
