@@ -123,26 +123,12 @@ function showPodLog(){
   while true; do
     pod=$(getLastPod ${rsname})
     if [ ! -z "${pod}" ] ;then
-      sleep 5
       echo "Getting log for ${pod}"
       eval "$KN logs ${pod}"
-      sleep 5
       break
     fi
   done
 }
-# Verifica se o deploy funcionou
-# Toda essa função está errada e deve ser utilizado o kubectl rollout pra monitorar o rollout :-(
-# function wait_for_deploy(){
-#   deployment_name=$1
-
-#   new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep NewReplicaSet|awk '{print $2}')
-#   (showPodLog $new_rs_name )&
-#   LOG_PID=$!
-#   kubectl rollout status Deployment/${deployment_name}
-#   # --timeout  $DEPLOY_TIMEOUT
-#   kill $LOG_PID
-# }
 
 function getPodDecribe(){
       deployment_name=$1
@@ -250,6 +236,30 @@ EOF
   debug 1 "$(cat civalues.$$)"
 }
 
+
+function helmpurge(){
+  release_name=$(buildReleaseName)
+  buildReleaseStatus $release_name; ret=$?
+  app_name=$(getAppProperties basename)
+  groupname=$(getAppProperties groupname)
+  name_override=""
+  if [ ! -z "$app_name" ];then
+    name_override="--set-string nameOverride=${app_name}"
+  fi
+  debug 1 "app_name: $app_name\ngroupname: ${groupname}\ninstallment_name: $name_override"
+
+  echo "Purging $release_name"
+
+  debug 1 "Purging: namespace:${NAMESPACE}\nrelease_name: ${release_name}"
+  helm delete --namespace ${NAMESPACE} "$release_name" --wait --timeout $HELM_TIMEOUT
+
+  helm_ret=$?
+
+  debug 1 "Helm Command return status: $helm_ret"
+
+  return ${helm_ret}
+}
+
 function helmdeploy(){
   #FIXME checar se o chart está ok
 
@@ -261,12 +271,15 @@ function helmdeploy(){
   if [ ! -z "$app_name" ];then
     name_override="--set-string nameOverride=${app_name}"
   fi
-
+  debug 1 "app_name: $app_name\ngroupname: ${groupname}\ninstallment_name: $name_override"
   echo "Template a ser executado"
+
   #fixme trocar caminho do values
-  buildValues $app_name
-  buildValues $app_name > ./ci.values
-  helm template -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE}
+  buildValues $app_name > ./ci.values.yaml
+
+  debug 1 "CI Injected Values\n$(cat ./ci.values.yaml)"
+
+  helm template -f ./ci.values.yaml  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE}
 
   if [ "$(getReleaseParam info.status)" == "failed" ];then
     helm delete --namespace ${NAMESPACE} "$release_name"
@@ -275,9 +288,11 @@ function helmdeploy(){
   # Executar o helm upgrade em background ele tem timeout
   # executar o showlogs tbm
   echo  -e "===========================\nInstalando.....\n"
-  helm upgrade --install -f ./ci.values  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
+  helm upgrade --install -f ./ci.values.yaml  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
 
   helm_ret=$?
+
+  debug 1 "Heml Command return status: $helm_ret"
   #echo "Helm running in PID $helmpid"
   # Gerar o Manifesto para pegar o deploy
   #sleep 2 # tempo arbitrário para esperar o deploy
@@ -286,10 +301,16 @@ function helmdeploy(){
   #Detecta o nome do deployment
   deployment_name=$(getManifestParam metadata.name)
 
+  debug 1 "K8s Deployment name: $deployment_name"
+
   # Descobre o nome do resouce_set
+
   new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep ^NewReplicaSet|awk '{print $2}')
-  #(showPodLog $new_rs_name )&
+
   echo -e "======================\n Pod Log"
+  echo "Waiting 30s to log pod output"
+  sleep 30
+
   showPodLog $new_rs_name
   #logging_pid=$!
 
@@ -320,25 +341,6 @@ function helmdeploy(){
     ;;
   esac
 
-  #   return 1
-  # fi
-
-  # readManifest ${release_name}
-  # getManifestParam metadata.name
-
-  # if wait_for_deploy $(getManifestParam metadata.name) $(getReleaseParam version) ; then
-  #   echo "Deployment successfull!"
-  #   echo "Status:"
-  #   getDeployParam status
-  #   getPodDecribe $(getManifestParam metadata.name)
-  #   return 0
-  # else
-  #   echo "Deployment Fail"
-  #   echo "Last Status:"
-  #   getDeployParam status
-  #   return 1
-  # fi
-
 }
 
 function dispHelp(){
@@ -349,6 +351,7 @@ commands:
   init
   fetchchart -c <charturi>
   deploy -i <imagename> -n <namespace> -r <deployment_name>
+  purge -n <namespace> -r <deployment_name>
 
  -h help
 EOF
@@ -433,8 +436,13 @@ case "$VERB" in
   ;;
   deploy)
     helmdeploy
-  ret=$?
-  exit $ret
+    ret=$?
+    exit $ret
+  ;;
+  purge)
+    helmpurge
+    ret=$?
+    exit $ret
   ;;
   *)
   echo "Comando invalido ${VERB}"
