@@ -384,7 +384,10 @@ while getopts i:n:c:b:r:o:s:a:h OPCAO; do
         # HELM CHART REPO
         c) CHART_REPO="${OPTARG}" ;;
         # HELM CHART BRANCH
-        b) CHART_BRANCH="${OPTARG}";;
+        b) 
+          if [ ! -z "${OPTARG}" ]; then
+            CHART_BRANCH="${OPTARG}"
+          fi;;
         # RELEASE SUFFIX
         o) RELEASE_SUFFIX="${OPTARG}";;
         t)  TIMEOUT="${OPTARG}"
