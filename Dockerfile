@@ -4,7 +4,7 @@ ARG HELM_VERSION=3.1.2
 ARG KUBECTL_VERSION=1.15.11
 ARG AWS_IAM_AUTH_VERSION=0.5.0
 ARG ARGOCD_VERSION=v1.7.9
-ARG YQ_VERSION=3.4.0
+#ARG YQ_VERSION=3.4.0
 
 # Install helm (latest release)
 # ENV BASE_URL="https://storage.googleapis.com/kubernetes-helm"
@@ -37,8 +37,8 @@ RUN curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/relea
     chmod +x /usr/local/bin/argocd
 
 # Instalando o yq
-RUN curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 && \
-    chmod +x /usr/local/bin/yq
+#RUN curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 && \
+#    chmod +x /usr/local/bin/yq
 
 RUN echo "**** install Python ****" && \
     apk add --no-cache python3 && \
@@ -49,7 +49,7 @@ RUN echo "**** install Python ****" && \
     rm -r /usr/lib/python*/ensurepip && \
     pip3 install --no-cache --upgrade pip setuptools wheel && \
     if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi && \
-    pip3 install awscli
+    pip3 install awscli yq
 
 COPY ./src/deploy     /usr/local/bin/deploy
 COPY ./src/assumerole /usr/local/bin/assumerole
