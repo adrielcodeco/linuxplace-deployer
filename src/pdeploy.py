@@ -3,13 +3,33 @@
 
 import os, sys, getopt, shlex, boto3, re
 import subprocess
-import jq
-
+#import jq
+from shutil import copyfile
 
 """ Funcao generica para uso de git
 """
 def git(*args):
     return subprocess.check_call(['git'] + list(args))
+
+
+def save_to_file(file_name, information):
+
+    file_pointer = open(file_name, "w")
+    file_pointer.write(information)
+    file_pointer.close()
+
+
+def read_from_file(file_name):
+
+    file_pointer = open(file_name, "r")
+
+    if file_pointer == "":
+        print ("Nao existe o arquivo" + file_name + " para ser lido.")
+
+    information = file_pointer.read()
+    file_pointer.close()
+
+    return information
 
 """
 Configurando chave ssh para conexao com o gitlab.
@@ -47,7 +67,7 @@ def get_yq(path_file, key):
     result = subprocess.check_output(cmd)
 
     # retira o \n no final 
-    return result[:-1]
+    return result[:-1].decode("utf-8")
 
 
 def get_release_name(release_suffix, app_properties):
@@ -62,7 +82,7 @@ def get_release_name(release_suffix, app_properties):
     if not suffix: 
         suffix = get_yq(LOCAL_PATH_CHART + "/Chart.yaml", "name")
 
-    return api_version+"-"+app_name+"-"+suffix
+    return api_version + "-" + app_name + "-" + suffix
 
     
 def build_release_status(deploy_name):
@@ -70,10 +90,10 @@ def build_release_status(deploy_name):
     #print "COMANDO HELM: " + str(cmd)
 
     deploy_status_result = ""
-    try:
-        deploy_status_result = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError, e:
-        deploy_status_result = e.output
+    #try:
+    #    deploy_status_result = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    #except subprocess.CalledProcessError, e:
+    #    deploy_status_result = e.output
 
     deploy_status_result = deploy_status_result[:-1]
 
@@ -99,13 +119,15 @@ def set_yq(path_file, key, value):
     subprocess.check_call(cmd)
 
 
-def build_values(app_name):
+def build_values(app_name, release_name):
 
     if os.path.exists(LOCAL_CI_VALUES):
         os.remove(LOCAL_CI_VALUES)
 
     open(LOCAL_CI_VALUES, 'a').close()
 
+
+    set_yq(LOCAL_CI_VALUES, "releaseName", release_name)
     set_yq(LOCAL_CI_VALUES, "image.repository", REPOSITORY)
     set_yq(LOCAL_CI_VALUES, "image.tag", TAG)
 
@@ -118,16 +140,20 @@ def build_values(app_name):
     set_yq(LOCAL_CI_VALUES, "cd.group", "TODO")    
 
 
-def helm_template(release_name,name_override_cmd):
+def exec_helm_template(release_name,name_override_cmd):
     if name_override_cmd:
         cmd = ["helm"]+["template"]+["-f"]+[LOCAL_CI_VALUES]+["-f"]+["./kubernetes/values.yaml"]+[release_name]+[LOCAL_PATH_CHART]+["--namespace"]+[NAMESPACE]+name_override_cmd
     else:
         cmd = ["helm"]+["template"]+["-f"]+[LOCAL_CI_VALUES]+["-f"]+["./kubernetes/values.yaml"]+[release_name]+[LOCAL_PATH_CHART]+["--namespace"]+[NAMESPACE]
 
     
-    print "COMANDO HELM: " + str(cmd)
-    subprocess.check_call(cmd)
-    print ""
+    #print "COMANDO HELM: " + str(cmd)
+    #subprocess.check_call(cmd)
+    output = subprocess.check_output(cmd)
+    #print ""
+
+    return output.decode("utf-8")
+
 
 def helm_delete(release_name):
     cmd = ["helm"]+["delete"]+[release_name]+["--namespace"]+[NAMESPACE]
@@ -143,22 +169,22 @@ def helm_upgrade(release_name):
     i_am_parent = os.fork()
 
     if not i_am_parent:
-        print "PING"
+        #print "PING"
         cmd = ["helm"]+["upgrade"]+["--install"]+["-f"]+[LOCAL_CI_VALUES]+["-f"]+["./kubernetes/values.yaml"]+[release_name]+[LOCAL_PATH_CHART]+["--namespace"]+[NAMESPACE]+["--wait"]+["--timeout"]+[HELM_TIMEOUT]#+["&"]
     
         #print "COMANDO HELM: " + str(cmd)
         subprocess.check_call(cmd)
-    else:
-        print "PONG"
+    #else:
+        #print "PONG"
 
 def get_jq(json, key):
     # TODO testar se ja tiver um deploy
     ret = ""
     try:
-        print jq.first(key, json)
+        #print jq.first(key, json)
         ret = "trocar"
     except Exception as e:
-        print "asdfk"
+        #print "asdfk"
         ret = ""
     
     exit(0)
@@ -166,7 +192,7 @@ def get_jq(json, key):
     return ret
 
 
-def helm_deploy(release_name_override, release_suffix, app_properties):
+def generateHelmTemplate(release_name_override, release_suffix, app_properties):
     # Etapa 1: chegar estado atual
     # constoi o nome do deploy
     release_name = ""
@@ -174,9 +200,6 @@ def helm_deploy(release_name_override, release_suffix, app_properties):
         release_name = release_name_override
     else:
         release_name = get_release_name(release_suffix, app_properties)
-
-    # Recupera o status do deploy atual, se tiver
-    build_release_status(release_name)
 
     # Recupera nomes dentro do arquivo propeties no repo do ms
     app_name = get_yq(app_properties, "basename")
@@ -186,38 +209,93 @@ def helm_deploy(release_name_override, release_suffix, app_properties):
     if app_name:
         name_override_cmd = ["--set-string"]+["nameOverride="+app_name]
 
+    build_values(app_name, release_name)
+
+    #print ""
+    #print "Template a ser executado"
+    template = exec_helm_template(release_name, name_override_cmd)
+
+    return template
+
+
+def update_argo_repo(repo):
+    global CI_PROJECT_NAME
+
+    manifest = read_from_file("manifests.yaml")
+    release_name = get_yq(LOCAL_CI_VALUES, "releaseName")
+
+    git("clone", repo, "argo")
+
+    path = NAMESPACE + "/" + CI_PROJECT_NAME + "/" + release_name
+
+
+    if not os.path.exists(path): 
+        os.makedirs(path)
+
+    print ("Path no repositorio ArgoCD: " + path)
+
+    save_to_file(path + "/manifests.yaml")
+
+
+def generateHelmRelease(release_name_override, release_suffix, app_properties, chart_repo):
+    # Etapa 1: chegar estado atual
+    # constoi o nome do deploy
+    release_name = ""
+    if release_name_override: 
+        release_name = release_name_override
+    else:
+        release_name = get_release_name(release_suffix, app_properties)
+
+    # Recupera nomes dentro do arquivo propeties no repo do ms
+    app_name = get_yq(app_properties, "basename")
+    group_name = get_yq(app_properties, "groupname")
+
+    print (release_name)
+
+    name_override_cmd = ""
+    if app_name:
+        name_override_cmd = ["--set-string"]+["nameOverride="+app_name]
+
     build_values(app_name)
 
-    print ""
-    print "Template a ser executado"
-    #helm_template(release_name, name_override_cmd)
+    hrFile = release_name + "-hr.yaml"
 
-    # se ja existir um deploy com mas no estado de failed, remove-o
-    # TODO testar quando tiver deploy antes
-    if get_jq(RELEASE_STATUS['status'], "info.status") == "failed":
-        print "Deletando o Deploy anterior que estava Failed"
-        helm_delete(release_name)
+    copyfile("helmReleaseTemplate.yaml", hrFile)
 
-    # Etapa 2: fazer um helm upgrade --install
-    helm_upgrade(release_name)
+    open(hrFile, 'a').close()
 
-    # Etapa 3: validar o deploy
+    # Metadata informations
+    set_yq(hrFile, "metadata.name", release_name)
+    set_yq(hrFile, "metadata.namespace", NAMESPACE)
 
+    # Spec Informations
+    set_yq(hrFile, "spec.releaseName", release_name)
+    set_yq(hrFile, "spec.chart.git", chart_repo)
 
-    print "ESPERANDO"
-    os.wait()
-    exit(12)
+    # spec.values
+    set_yq(hrFile, "spec.values.image.repository", REPOSITORY)
+    set_yq(hrFile, "spec.values.image.tag", TAG)
+
+    #set_yq(LOCAL_CI_VALUES, "cd.commit", "TODO")
+    #set_yq(LOCAL_CI_VALUES, "cd.branch", "TODO")
+    #set_yq(LOCAL_CI_VALUES, "cd.basename", app_name)
+    #set_yq(LOCAL_CI_VALUES, "cd.reponame", "TODO")
+    #set_yq(LOCAL_CI_VALUES, "cd.group", "TODO")    
+
+    return hrFile
 
 """ ================== """
 
 def help():
-    print 'usage: deploy.py -v init'
-    print '       deploy.py -v fetchchart -c <chart_repo> [-b <chart_branch> -r <release_name_override>]'
-    print '       deploy.py -v deploy [-r <release_name_override> -o <release_suffix>]'
+    print ('usage: deploy.py -v init')
+    print ('       deploy.py -v fetchchart          -c <chart_repo> [-b <chart_branch> -r <release_name_override>]')
+    print ('       deploy.py -v generateHelmRelease -n <ns> -a <app_properties> -i <image_tag> -c <chart_repo>')
+    print ('       deploy.py -v deploy              [-n <ns> -a <app_properties>]')
     sys.exit(1)
 
 
 """ Variaveis Globais"""
+
 # Path para clone do helm chart
 LOCAL_PATH_CHART = "./curr_chart"
 # Local do ci_default.yaml
@@ -233,17 +311,26 @@ NAMESPACE = ""
 TAG = ""
 HELM_TIMEOUT = "20s"
 
-def init_deploy(image_name):
+
+def get_aws_account_id():
     global AWS_ACCOUNT_ID
-    global TAG
-    global REPOSITORY
 
     sts = boto3.client('sts')
     resp = sts.get_caller_identity()
 
     AWS_ACCOUNT_ID = resp["Account"]
-    print "Running in " + AWS_ACCOUNT_ID
-    
+
+    if AWS_ACCOUNT_ID == "": 
+        print ("Account ID nao encontrado.")
+        erro(1)
+
+    print ("Running in " + AWS_ACCOUNT_ID)
+
+
+def get_repository_tag(image_name):
+    global TAG
+    global REPOSITORY
+
     # se variavel vazia
     if not image_name:
         TAG = "none"
@@ -254,34 +341,41 @@ def init_deploy(image_name):
         REPOSITORY = splited[0]
         TAG = splited[1]
 
+    print ("Repositorio:tag : " + REPOSITORY + ":" + TAG)
+
 
 def main(argv):
     try:
         # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-        opts, args = getopt.getopt(argv,"h:i:b:r:n:v:a:o:c:")
+        opts, args = getopt.getopt(argv,"a:b:c:d:h:i:n:o:p:r:v:")
     except getopt.GetoptError:
         help()
-
+    
+    
     if len(argv) == 0:
         help()
     
+
     verb = ""
     chart_branch = "master"
     chart_repo = ""
     release_name_override = ""
     release_suffix = ""
     app_properties = ""
+    argocd_repo = ""
     global NAMESPACE
     image_name = ""
 
     for opt, arg in opts:
-        print opt + " " + arg
+        print (opt + " " + arg)
         if opt == "-a":
             app_properties = arg
         elif opt == "-b":
             chart_branch = arg
         elif opt == "-c":
             chart_repo = arg
+        elif opt == "-d":
+            argocd_repo = arg
         elif opt == "-h":
             help()
         elif opt == "-i":
@@ -290,12 +384,14 @@ def main(argv):
             NAMESPACE = arg
         elif opt == "-o":
             release_suffix = arg
+        elif opt == "-p":
+            project_name = arg
         elif opt == "-r":
             release_name_override = arg
         elif opt == "-v":
             verb = arg
         else: 
-            print "parametro incorreto"
+            print ("parametro incorreto")
             help()
 
     if verb == "init":
@@ -304,23 +400,46 @@ def main(argv):
     elif verb == "fetchchart":
         # se vazio
         if not chart_repo:
-            print "parametro invalido"
+            print ("parametro invalido")
             help()
 
         fetch_chart(chart_repo, chart_branch)
 
-    elif verb == "deploy":
+    elif verb == "generateHelmRelease":
         # se algum vazio
         if not app_properties or not NAMESPACE:
-            print "parametro invalido"
+            print ("parametro invalido")
             help()
 
-        init_deploy(image_name)
+        get_repository_tag(image_name)
 
-        helm_deploy(release_name_override, release_suffix, app_properties)
+        hrFile = generateHelmRelease(release_name_override, release_suffix, app_properties, chart_repo)
+
+
+    elif verb == "generateHelmTemplate":
+        # se algum vazio
+        if not app_properties or not NAMESPACE:
+            print ("parametro invalido")
+            help()
+
+        get_aws_account_id()
+        get_repository_tag(image_name)
+
+        manifests = generateHelmTemplate(release_name_override, release_suffix, app_properties)
+
+        save_to_file("manifests.yaml", manifests)
+
+
+    elif verb == "saveArgoCDRepo":
+        if not argocd_repo: 
+            print ("parametro invalido")
+            help()
+
+        update_argo_repo(argocd_repo)
+
 
     elif verb == "":
-        print "verbo inexistente"
+        print ("verbo inexistente")
         help()
 
 
