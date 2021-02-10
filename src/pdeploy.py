@@ -6,30 +6,15 @@ import subprocess
 #import jq
 from shutil import copyfile
 
-""" Funcao generica para uso de git
+
+""" 
+Funcoes para uso de git
 """
 def git(*args):
     return subprocess.check_call(['git'] + list(args))
 
-
-def save_to_file(file_name, information):
-
-    file_pointer = open(file_name, "w")
-    file_pointer.write(information)
-    file_pointer.close()
-
-
-def read_from_file(file_name):
-
-    file_pointer = open(file_name, "r")
-
-    if file_pointer == "":
-        print ("Nao existe o arquivo" + file_name + " para ser lido.")
-
-    information = file_pointer.read()
-    file_pointer.close()
-
-    return information
+def fetch_chart(repo, branch):
+    git("clone", repo, "-b", branch, LOCAL_PATH_CHART)
 
 """
 Configurando chave ssh para conexao com o gitlab.
@@ -52,11 +37,25 @@ def init_key():
     os.system(cmd)
 
 
-def fetch_chart(repo, branch):
-    git("clone", repo, "-b", branch, LOCAL_PATH_CHART)
+""" Funcoes para manipulação de Arquivo """
+def save_to_file(file_name, information):
 
-""" ================== """
+    file_pointer = open(file_name, "w")
+    file_pointer.write(information)
+    file_pointer.close()
 
+
+def read_from_file(file_name):
+
+    file_pointer = open(file_name, "r")
+
+    if file_pointer == "":
+        print ("Nao existe o arquivo" + file_name + " para ser lido.")
+
+    information = file_pointer.read()
+    file_pointer.close()
+
+    return information
 
 
 def get_yq(path_file, key):
@@ -69,6 +68,35 @@ def get_yq(path_file, key):
     # retira o \n no final 
     return result[:-1].decode("utf-8")
 
+
+def set_yq(path_file, key, value, isList=False):
+    # monta a query
+    if isList:
+        cmd = ['yq'] + ['w'] + ['-i'] + [path_file] + [key+"[+]"] + [value]
+    else:
+        cmd = ['yq'] + ['w'] + ['-i'] + [path_file] + [key] + [value]
+
+    #print "COMANDO YQ: " + str(cmd)
+    # processa o comando e captura o resultado
+    subprocess.check_call(cmd)
+
+
+def get_jq(json, key):
+    # TODO testar se ja tiver um deploy
+    ret = ""
+    try:
+        #print jq.first(key, json)
+        ret = "trocar"
+    except Exception as e:
+        #print "asdfk"
+        ret = ""
+    
+    exit(0)
+    # TODO
+    return ret
+
+
+""" Funcoes para construcao de informacoes """
 
 def get_release_name(release_suffix, app_properties):
     # prefix
@@ -84,7 +112,29 @@ def get_release_name(release_suffix, app_properties):
 
     return api_version + "-" + app_name + "-" + suffix
 
+
+def build_values(app_name, release_name):
+
+    if os.path.exists(LOCAL_CI_VALUES):
+        os.remove(LOCAL_CI_VALUES)
+
+    open(LOCAL_CI_VALUES, 'a').close()
+
+    set_yq(LOCAL_CI_VALUES, "releaseName", release_name)
+    set_yq(LOCAL_CI_VALUES, "image.repository", REPOSITORY)
+    set_yq(LOCAL_CI_VALUES, "image.tag", TAG)
+
+    set_yq(LOCAL_CI_VALUES, "AwsAccountId", AWS_ACCOUNT_ID)
+
+    set_yq(LOCAL_CI_VALUES, "cd.commit", "TODO")
+    set_yq(LOCAL_CI_VALUES, "cd.branch", "TODO")
+    set_yq(LOCAL_CI_VALUES, "cd.basename", app_name)
+    set_yq(LOCAL_CI_VALUES, "cd.reponame", "TODO")
+    set_yq(LOCAL_CI_VALUES, "cd.group", "TODO")    
+
     
+
+""" Funcoes para comandos HELM """
 def build_release_status(deploy_name):
     cmd = ['helm'] + ['--namespace'] + [NAMESPACE] + ["status"] + [deploy_name] + ["-o"] + ["json"] 
     #print "COMANDO HELM: " + str(cmd)
@@ -110,34 +160,6 @@ def build_release_status(deploy_name):
         #nao possui erro
         RELEASE_STATUS = {'error':'false', 'status': deploy_status_result}
         return 0
-
-def set_yq(path_file, key, value):
-    # monta a query
-    cmd = ['yq'] + ['w'] + ['-i'] + [path_file] + [key] + [value]
-    #print "COMANDO YQ: " + str(cmd)
-    # processa o comando e captura o resultado
-    subprocess.check_call(cmd)
-
-
-def build_values(app_name, release_name):
-
-    if os.path.exists(LOCAL_CI_VALUES):
-        os.remove(LOCAL_CI_VALUES)
-
-    open(LOCAL_CI_VALUES, 'a').close()
-
-
-    set_yq(LOCAL_CI_VALUES, "releaseName", release_name)
-    set_yq(LOCAL_CI_VALUES, "image.repository", REPOSITORY)
-    set_yq(LOCAL_CI_VALUES, "image.tag", TAG)
-
-    set_yq(LOCAL_CI_VALUES, "AwsAccountId", AWS_ACCOUNT_ID)
-
-    set_yq(LOCAL_CI_VALUES, "cd.commit", "TODO")
-    set_yq(LOCAL_CI_VALUES, "cd.branch", "TODO")
-    set_yq(LOCAL_CI_VALUES, "cd.basename", app_name)
-    set_yq(LOCAL_CI_VALUES, "cd.reponame", "TODO")
-    set_yq(LOCAL_CI_VALUES, "cd.group", "TODO")    
 
 
 def exec_helm_template(release_name,name_override_cmd):
@@ -177,21 +199,7 @@ def helm_upgrade(release_name):
     #else:
         #print "PONG"
 
-def get_jq(json, key):
-    # TODO testar se ja tiver um deploy
-    ret = ""
-    try:
-        #print jq.first(key, json)
-        ret = "trocar"
-    except Exception as e:
-        #print "asdfk"
-        ret = ""
-    
-    exit(0)
-    # TODO
-    return ret
-
-
+"""
 def generateHelmTemplate(release_name_override, release_suffix, app_properties):
     # Etapa 1: chegar estado atual
     # constoi o nome do deploy
@@ -217,27 +225,9 @@ def generateHelmTemplate(release_name_override, release_suffix, app_properties):
 
     return template
 
-
-def update_argo_repo(repo):
-    global CI_PROJECT_NAME
-
-    manifest = read_from_file("manifests.yaml")
-    release_name = get_yq(LOCAL_CI_VALUES, "releaseName")
-
-    git("clone", repo, "argo")
-
-    path = NAMESPACE + "/" + CI_PROJECT_NAME + "/" + release_name
-
-
-    if not os.path.exists(path): 
-        os.makedirs(path)
-
-    print ("Path no repositorio ArgoCD: " + path)
-
-    save_to_file(path + "/manifests.yaml")
-
-
+"""
 def generateHelmRelease(release_name_override, release_suffix, app_properties, chart_repo):
+    # TODO
     # Etapa 1: chegar estado atual
     # constoi o nome do deploy
     release_name = ""
@@ -284,7 +274,73 @@ def generateHelmRelease(release_name_override, release_suffix, app_properties, c
 
     return hrFile
 
-""" ================== """
+
+""" Funcoes ArgoCD """
+"""
+def update_argo_repo(repo):
+    # TODO
+    global CI_PROJECT_NAME
+
+    manifest = read_from_file("manifests.yaml")
+    release_name = get_yq(LOCAL_CI_VALUES, "releaseName")
+
+    git("clone", repo, "argo")
+
+    path = NAMESPACE + "/" + CI_PROJECT_NAME + "/" + release_name
+
+
+    if not os.path.exists(path): 
+        os.makedirs(path)
+
+    print ("Path no repositorio ArgoCD: " + path)
+
+    save_to_file(path + "/manifests.yaml")
+"""
+
+def generateApplicationArgoCD(repo_aplicacoes):
+    release_name = get_yq(LOCAL_CI_VALUES, "releaseName")
+
+    set_yq(LOCAL_ARGOCDAPP, "metadata.name", release_name)
+
+    set_yq(LOCAL_ARGOCDAPP, "spec.destination.namespace", NAMESPACE)
+    set_yq(LOCAL_ARGOCDAPP, "spec.destination.server", "{{ .Values.spec.destination.server }}")
+
+    set_yq(LOCAL_ARGOCDAPP, "spec.project", NAMESPACE)
+
+    set_yq(LOCAL_ARGOCDAPP, "spec.source.path", "default-chart")
+    set_yq(LOCAL_ARGOCDAPP, "spec.source.repoURL", repo_aplicacoes)
+    set_yq(LOCAL_ARGOCDAPP, "spec.source.targetRevision", "HEAD")
+    set_yq(LOCAL_ARGOCDAPP, "spec.source.helm.valueFiles", "../{{ .Values.env }}/"+ release_name + "/values.yaml", True) 
+
+    os.rename("ArgoCDApplication.yaml", release_name + ".yaml")
+
+
+"""
+def generateValuesApp(release_name_override, release_suffix, app_properties, chart_repo):
+
+    release_name = get_yq(LOCAL_CI_VALUES, "releaseName")
+
+    # Recupera nomes dentro do arquivo propeties no repo do ms
+    app_name = get_yq(app_properties, "basename")
+
+    build_values(app_name, release_name)
+
+    copyfile("./kubernetes/values.yaml", "values.yaml")
+
+    set_yq("values.yaml", "spec.values.image.repository", REPOSITORY)
+
+    # spec.values
+    #set_yq(hrFile, "spec.values.image.repository", REPOSITORY)
+    #set_yq(hrFile, "spec.values.image.tag", TAG)
+
+    #set_yq(LOCAL_CI_VALUES, "cd.commit", "TODO")
+    #set_yq(LOCAL_CI_VALUES, "cd.branch", "TODO")
+    #set_yq(LOCAL_CI_VALUES, "cd.basename", app_name)
+    #set_yq(LOCAL_CI_VALUES, "cd.reponame", "TODO")
+    #set_yq(LOCAL_CI_VALUES, "cd.group", "TODO")    
+
+    return hrFile
+"""
 
 def help():
     print ('usage: deploy.py -v init')
@@ -300,6 +356,7 @@ def help():
 LOCAL_PATH_CHART = "./curr_chart"
 # Local do ci_default.yaml
 LOCAL_CI_VALUES  = "./ci.values"
+LOCAL_ARGOCDAPP  = "./ArgoCDApplication.yaml"
 # Dicionario para armazenar status de deployment
 RELEASE_STATUS = {}
 #AWS Account
@@ -404,6 +461,14 @@ def main(argv):
             help()
 
         fetch_chart(chart_repo, chart_branch)
+
+    elif verb == "generateAppArgoCD":
+        if not NAMESPACE or not chart_repo:
+            print ("parametro invalido")
+            help()
+
+        generateApplicationArgoCD(chart_repo)
+
 
     elif verb == "generateHelmRelease":
         # se algum vazio
