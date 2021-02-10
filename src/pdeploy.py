@@ -357,7 +357,7 @@ def help():
 LOCAL_PATH_CHART = "./curr_chart"
 # Local do ci_default.yaml
 LOCAL_CI_VALUES  = "./ci.values"
-LOCAL_ARGOCDAPP  = "./src/ArgoCDApplication.yaml"
+LOCAL_ARGOCDAPP  = "./linuxplace-deployer/src/ArgoCDApplication.yaml"
 # Dicionario para armazenar status de deployment
 RELEASE_STATUS = {}
 #AWS Account
