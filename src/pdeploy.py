@@ -60,8 +60,9 @@ def read_from_file(file_name):
 
 def get_yq(path_file, key):
     # monta a query
-    #cmd = ['yq'] + ['r'] + [path_file] + [key]
-    cmd = ['yq'] + ['-y'] + ["." + key] + [path_file] + [" | head -n1"]
+    cmd = ['yq'] + ['r'] + [path_file] + [key]
+    # yq2.12
+    #cmd = ['yq'] + ['-y'] + ["." + key] + [path_file] + [" | head -n1"]
     #print "COMANDO YQ: " + str(cmd)
     # processa o comando e captura o resultado
     result = subprocess.check_output(cmd)
