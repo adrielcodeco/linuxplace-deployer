@@ -313,7 +313,7 @@ def generateApplicationArgoCD(repo_aplicacoes, release_name):
     set_yq(LOCAL_ARGOCDAPP, "spec.source.targetRevision", "HEAD")
     set_yq(LOCAL_ARGOCDAPP, "spec.source.helm.valueFiles", "../{{ .Values.env }}/"+ release_name + "/values.yaml", True) 
 
-    os.rename("ArgoCDApplication.yaml", release_name + ".yaml")
+    os.rename(LOCAL_ARGOCDAPP, release_name + ".yaml")
 
 
 """
@@ -357,7 +357,7 @@ def help():
 LOCAL_PATH_CHART = "./curr_chart"
 # Local do ci_default.yaml
 LOCAL_CI_VALUES  = "./ci.values"
-LOCAL_ARGOCDAPP  = "./ArgoCDApplication.yaml"
+LOCAL_ARGOCDAPP  = "./src/ArgoCDApplication.yaml"
 # Dicionario para armazenar status de deployment
 RELEASE_STATUS = {}
 #AWS Account
