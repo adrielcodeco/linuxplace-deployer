@@ -298,8 +298,7 @@ def update_argo_repo(repo):
     save_to_file(path + "/manifests.yaml")
 """
 
-def generateApplicationArgoCD(repo_aplicacoes):
-    release_name = get_yq(LOCAL_CI_VALUES, "releaseName")
+def generateApplicationArgoCD(repo_aplicacoes, release_name):
 
     set_yq(LOCAL_ARGOCDAPP, "metadata.name", release_name)
 
@@ -464,11 +463,11 @@ def main(argv):
         fetch_chart(chart_repo, chart_branch)
 
     elif verb == "generateAppArgoCD":
-        if not NAMESPACE or not chart_repo:
+        if not NAMESPACE or not chart_repo or not release_name_override:
             print ("parametro invalido")
             help()
 
-        generateApplicationArgoCD(chart_repo)
+        generateApplicationArgoCD(chart_repo, release_name_override)
 
 
     elif verb == "generateHelmRelease":
