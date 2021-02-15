@@ -56,6 +56,7 @@ function buildReleaseStatus(){
     if echo $release_status | grep "Error" >/dev/null ; then
       RELEASE_STATUS[error]="true";
       RELEASE_STATUS[error_desc]=$(echo $release_status |sed -e 's/Error: //')
+
       # se o erro foi de release não encontrada, retornando 1
       debug 2 "Release status error_desc: ${RELEASE_STATUS[error_desc]}"
       if [ "${RELEASE_STATUS[error_desc]}" == "release: not found" ]; then
@@ -80,6 +81,7 @@ function buildDeploymentStatus(){
     if echo $deployment_status | grep "^Error" >/dev/null ; then
       DEPLOYMENT_STATUS[error]="true";
       DEPLOYMENT_STATUS[error_desc]=$(echo $release_status |sed -e 's/^Error//')
+      DEPLOYMENT_STATUS[status]=${deployment_status}
       # se o erro foi de release não encontrada, retornando 1
       debug 2 "Deployment status error_desc: ${DEPLOYMENT_STATUS[error_desc]}"
       if echo -E "${DEPLOYMENT_STATUS[error_desc]}" |grep "deployments.extensions \"${deployment_name}\" not found" ; then
@@ -96,6 +98,7 @@ function buildDeploymentStatus(){
 
 function getLastPod(){
   rsname="$1"
+  created_pod=""
   num=-1
   IFS=''
   debug 1 "Get last pod to rs ${rsname}"
@@ -118,15 +121,19 @@ function getLastPod(){
 }
 function showPodLog(){
   rsname=$1
+  seconds=${DEPLOY_TIMEOUT%?}
   # set -x
   debug 1 "Show Log for pods in  ${rsname}"
-  while true; do
+  while [ $seconds -gt 0 ]; do
     pod=$(getLastPod ${rsname})
     if [ ! -z "${pod}" ] ;then
       echo "Getting log for ${pod}"
       eval "$KN logs ${pod}"
       break
     fi
+    debug 1 "Log Reminding ${seconds} seconds"
+    sleep 1
+    : $((seconds--))
   done
 }
 
@@ -281,9 +288,21 @@ function helmdeploy(){
 
   helm template -f ./ci.values.yaml  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE}
 
-  if [ "$(getReleaseParam info.status)" == "failed" ];then
-    helm delete --namespace ${NAMESPACE} "$release_name"
+  # verifica se precisa remover release antiga com falha
+  # Se o commando helm nao gerou erro
+  if [ ${RELEASE_STATUS[error]} ==  "false" ]; then
+    # mas o status sim, entao remove
+    if [ "$(getReleaseParam info.status)" == "failed" ];then
+      debug 1 "Old Release was Failed. Deleting it\n$(cat ./ci.values.yaml)"
+      helm delete --namespace ${NAMESPACE} "$release_name"
+    fi
+  # se o helm tiver gerado erro logo no inicio, nao precisa fazer nada
+  else
+    if [[ "${RELEASE_STATUS[error_desc]}" == *"not found"* ]];then
+      debug 1 "Do not exist any Relase until now."
+    fi
   fi
+
 
   # Executar o helm upgrade em background ele tem timeout
   # executar o showlogs tbm
@@ -292,7 +311,7 @@ function helmdeploy(){
 
   helm_ret=$?
 
-  debug 1 "Heml Command return status: $helm_ret"
+  debug 1 "Helm Command return status: $helm_ret"
   #echo "Helm running in PID $helmpid"
   # Gerar o Manifesto para pegar o deploy
   #sleep 2 # tempo arbitrário para esperar o deploy
@@ -302,6 +321,7 @@ function helmdeploy(){
   deployment_name=$(getManifestParam metadata.name)
 
   debug 1 "K8s Deployment name: $deployment_name"
+
 
   # Descobre o nome do resouce_set
 
