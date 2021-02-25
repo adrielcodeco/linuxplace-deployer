@@ -316,47 +316,18 @@ function helmdeploy(){
   # Gerar o Manifesto para pegar o deploy
   #sleep 2 # tempo arbitrário para esperar o deploy
 
-  readManifest ${release_name}
-  #Detecta o nome do deployment
-  deployment_name=$(getManifestParam metadata.name)
-
-  debug 1 "K8s Deployment name: $deployment_name"
-
-
-  # Descobre o nome do resouce_set
-
-  new_rs_name=$( eval "${KN} describe deploy ${deployment_name}" |grep ^NewReplicaSet|awk '{print $2}')
-
-  echo -e "======================\n Pod Log"
-  echo "Waiting 30s to log pod output"
-  sleep 30
-
-  showPodLog $new_rs_name
-  #logging_pid=$!
-
-  # espera o Helm Terminar
-  # echo "Wait Helm end"
-  # wait $helmpid;
-  # helm_ret=$?
-  # kill $logging_pid
-
-  #Constroi matriz de retorno
-  buildReleaseStatus $release_name; retrelease=$?
-  # Para o logging
-  #kill $logging_pid
-
   case $helm_ret in
     0)
       echo "Deployment successfull!"
-      echo "Status:"
+      #echo "Status:"
       #getReleaseParam status
       #getPodDecribe $(getManifestParam metadata.name)
       return 0
     ;;
     *)
     echo "Helm Deploy Fail"
-    echo "Last Status:"
-    echo -e $(getReleaseParam status)
+    #echo "Last Status:"
+    #echo -e $(getReleaseParam status)
     return 1
     ;;
   esac
