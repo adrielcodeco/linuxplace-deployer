@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/python
+
 # -*- coding: utf-8 -*-
 
 import os, sys, getopt, shlex, boto3, re
@@ -13,14 +14,14 @@ Funcoes para uso de git
 def git(*args):
     return subprocess.check_call(['git'] + list(args))
 
-def fetch_chart(repo, branch):
-    git("clone", repo, "-b", branch, LOCAL_PATH_CHART)
+def fetch_repository(repo, branch, path):
+    git("clone", repo, "-b", branch, path)
 
 """
 Configurando chave ssh para conexao com o gitlab.
 """
 def init_key():
-    path = "./ssh"
+    path = "~/.ssh"
     host = "gitlab.com"
 
     if not os.path.exists(path): 
@@ -35,6 +36,9 @@ def init_key():
 
     cmd = "chmod 0600 " + path + "/id_rsa"
     os.system(cmd)
+
+    git("config --global user.email \"suporte@linuxplace.com.br\"")
+    git("config --global user.name \"LxP Deployer\"")
 
 
 """ Funcoes para manipulação de Arquivo """
@@ -355,6 +359,7 @@ def help():
 
 # Path para clone do helm chart
 LOCAL_PATH_CHART = "./curr_chart"
+LOCAL_PATH_ARGOCD = "./argocd"
 # Local do ci_default.yaml
 LOCAL_CI_VALUES  = "./ci.values"
 LOCAL_ARGOCDAPP  = "./linuxplace-deployer/src/ArgoCDApplication.yaml"
@@ -455,13 +460,21 @@ def main(argv):
     if verb == "init":
         init_key()
 
-    elif verb == "fetchchart":
+    elif verb == "fetchChart":
         # se vazio
         if not chart_repo:
             print ("parametro invalido")
             help()
 
-        fetch_chart(chart_repo, chart_branch)
+        fetch_repository(chart_repo, chart_branch, LOCAL_PATH_CHART)
+
+    elif verb == "fetchArgocd":
+        # se vazio
+        if not chart_repo:
+            print ("parametro invalido")
+            help()
+
+        fetch_repository(chart_repo, chart_branch, LOCAL_PATH_ARGOCD)
 
     elif verb == "generateAppArgoCD":
         if not NAMESPACE or not chart_repo or not release_name_override:
