@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: 
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: 
+    server:
+  project: 
+  source:
+    path:  
+    repoURL: 
+    targetRevision:
+    helm:
+      valueFiles:
+      version: v3
+  syncPolicy:
+    automated:
+      prune: true
