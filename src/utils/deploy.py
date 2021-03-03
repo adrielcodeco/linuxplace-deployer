@@ -39,8 +39,7 @@ class Deploy:
         # TODO situacao o 0 deploys finais
 
         if self.ns == "dev":
-            # TODO PATH ../..
-            copia_e_cola(f"../../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
+            copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
         else:
             alert(f"\n#BETA: Deploy em hml e prd ainda nao concluido", "red")
             exit(1)
