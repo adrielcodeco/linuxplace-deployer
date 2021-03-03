@@ -38,7 +38,7 @@ RUN curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/relea
 
 # Instalando o yq
 RUN curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 && \
-    chmod +x /usr/local/bin/yq
+    chmod +x /usr/local/bin/yq 
 
 RUN echo "**** install Python ****" && \
     apk add --no-cache python3 && \
@@ -52,8 +52,7 @@ RUN echo "**** install Python ****" && \
     pip3 install awscli boto3 
 
 COPY ./src/deploy     /usr/local/bin/deploy
-COPY ./src/pdeploy.py     /usr/local/bin/pdeploy.py
 COPY ./src/assumerole /usr/local/bin/assumerole
-RUN chmod a+x /usr/local/bin/deploy && chmod a+x /usr/local/bin/assumerole && chmod a+x /usr/local/bin/pdeploy.py
+RUN chmod a+x /usr/local/bin/deploy && chmod a+x /usr/local/bin/assumerole 
 
 WORKDIR /apps
