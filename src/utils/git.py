@@ -9,7 +9,7 @@ def git_pull(branch="master"):
 	command(f"git pull origin {branch}")
 
 def fetch_repo(repo, path, branch="master"):
-	alert(f"# Clonando repo {repo} em {path}")
+	alert(f"# Clonando repo {repo} em {path}", "yellow")
 	if there_is_dir(path):
 		old_path = pwd()
 		chdir(path, imprime=False)
@@ -26,7 +26,7 @@ def get_last_tag():
 def there_is_modification():
 	# esse comando lista alteracoes em arquivos, caso exista retorna sim
 	null, out = command(f"git status --porcelain")
-	alert(f"# Arquivos alterados:\n{out}")
+	alert(f"# Arquivos alterados:\n{out}", "yellow")
 	if out:
 		return True
 	else:
@@ -42,12 +42,12 @@ def git_commit_and_push(msg, branch="master"):
 def add_and_push(msg, branch="master"):
 	#alert(f"# Ultima tag da branch {branch}: {get_last_tag()}")
 	if there_is_modification():
-		alert("# Repositorio com atualizacoes")
+		alert("# Repositorio com atualizacoes", "yellow")
 		git_add_all()
 		git_commit_and_push(f"Deploy {msg}")
-		alert(f"# Commit e Push feitos para origin {branch}")
+		alert(f"# Commit e Push feitos para origin {branch}", "yellow")
 	else:
-		alert("# Nao existe modificacoes e por isso nao exige acoes nesse repositorio")
+		alert("# Nao existe modificacoes e por isso nao exige acoes nesse repositorio", "yellow")
 		return
 
 # CLASS POC

@@ -136,7 +136,7 @@ def set_yq(path_file, key, value, isList=False):
 	else:
 		cmd = f"yq w -i {path_file} '{key}' '{value}'"
 
-	alert(f"cmd set_yq: {cmd}", "yellowge")
+	alert(f"cmd set_yq: {cmd}", "yellow")
 
 	command(cmd)
 
@@ -147,7 +147,7 @@ def chdir(path, imprime=True):
 	try:
 		os.chdir(path)
 		if imprime:
-			alert(f"# Diretorio alterado para {os.getcwd()}", "yellowge")
+			alert(f"# Diretorio alterado para {os.getcwd()}", "yellow")
 	except:
 		raise
 
@@ -177,6 +177,6 @@ def get_aws_account_id():
 		alert("Account ID nao encontrado.", "red")
 		erro(1)
 	else:
-		alert(f"Account ID: {aws_account_id}", "yellowge")
+		alert(f"Account ID: {aws_account_id}", "yellow")
 
 	return aws_account_id
