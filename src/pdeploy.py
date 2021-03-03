@@ -21,14 +21,10 @@ def configura_ssh_e_git():
 
     mkdir(ssh_path)
 
-    command("ls -lart /root/")
-
     cmd = "touch " + ssh_path + "/known_hosts"
     command(cmd)
     cmd = "touch " + ssh_path + "/id_rsa"
     command(cmd)
-
-    command("ls "+ssh_path)
 
     cmd = f"ssh-keyscan {host}"
     command(cmd, f"{ssh_path}/known_hosts")
@@ -37,7 +33,8 @@ def configura_ssh_e_git():
     cmd = f"chmod 0600 {ssh_path}/id_rsa"
     command(cmd)
 
-    #command("git config --global user.email \"suporte@linuxplace.com.br\"; git config --global user.name \"LxP Deployer\"")
+    init_git()
+
     alert("\n#SSH e git configurado")
 
 

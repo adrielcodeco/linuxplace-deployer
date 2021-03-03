@@ -1,5 +1,10 @@
 from utils.utils import *
 
+def init_git():
+	info = f"[user]\n\tname = LxP Deployer\n\temail = suporte@linuxplace.com.br"
+	save_into_file("/root/.gitconfig", info)
+	# command("git config --global user.email \"suporte@linuxplace.com.br\"; git config --global user.name \"LxP Deployer\"")
+
 def git_pull(branch="master"):
 	command(f"git pull origin {branch}")
 
