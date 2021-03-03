@@ -33,7 +33,7 @@ def configura_ssh_e_git():
     cmd = f"ssh-keyscan {host}"
     command(cmd, f"{ssh_path}/known_hosts")
 
-    save_into_file(f"{ssh_path}/id_rsa", get_env_var("SSH_PRIVATE_KEY"), "a")
+    save_into_file(f"{ssh_path}/id_rsa", get_env_var("SSH_PRIVATE_KEY")+"\n", "a")
     cmd = f"chmod 0600 {ssh_path}/id_rsa"
     command(cmd)
 
