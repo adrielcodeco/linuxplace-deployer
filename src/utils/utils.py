@@ -128,12 +128,11 @@ def get_yq(path_file, key):
 	# retira o \n no final
 	#return result[:-1].decode("utf-8")
 
-def set_yq(path_file, key, value, key_base_path="", isList=False):
-	# monta a query
+def set_yq(path_file, key, value, isList=False):
 	if isList:
-		cmd = f"yq w -i {path_file} {key_base_path}.{key}[+] {value}"
+		cmd = f"yq w -i {path_file} {key}[+] {value}"
 	else:
-		cmd = f"yq w -i {path_file} {key_base_path}.{key} {value}"
+		cmd = f"yq w -i {path_file} {key} {value}"
 
 	alert(f"Comando a ser executado no set yq: {cmd}")
 
