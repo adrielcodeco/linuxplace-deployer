@@ -63,25 +63,25 @@ class Deploy:
 
         if there_is_deploy:
             # se sim so reescreve sobre o mapa
-            # yq3 w -i values.yaml 'applications.(name==v1-api-u4c-YYY-master).name' 'v1-api-u4c-XXXYYY-master'
-            cmd = f"yq3 w -i values.yaml 'applications.(name=={self.release_name}).name' '{self.release_name}'"
+            # yq w -i values.yaml 'applications.(name==v1-api-u4c-YYY-master).name' 'v1-api-u4c-XXXYYY-master'
+            cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).name' '{self.release_name}'"
         else:
             # caso contrario cria um novo
-            # yq3 w -i values.yaml 'applications[+].name' 'v1-api-u4c-rodolfo-master'
-            cmd = f"yq3 w -i values.yaml 'applications[+].name' '{self.release_name}'"
+            # yq w -i values.yaml 'applications[+].name' 'v1-api-u4c-rodolfo-master'
+            cmd = f"yq w -i values.yaml 'applications[+].name' '{self.release_name}'"
         # name
         command(cmd)
         # ns
-        cmd = f"yq3 w -i values.yaml 'applications.(name=={self.release_name}).namespace' '{self.ns}'"
+        cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).namespace' '{self.ns}'"
         command(cmd)
         # source.targetRevision
-        cmd = f"yq3 w -i values.yaml 'applications.(name=={self.release_name}).source.targetRevision' 'HEAD'"
+        cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.targetRevision' 'HEAD'"
         command(cmd)
         # source.path
-        cmd = f"yq3 w -i values.yaml 'applications.(name=={self.release_name}).source.path' 'ms-chart'"
+        cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.path' 'ms-chart'"
         command(cmd)
         # source.repoURL
-        cmd = f"yq3 w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL' 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
+        cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL' 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
         command(cmd)
         add_and_push()
         chdir(old_path)
