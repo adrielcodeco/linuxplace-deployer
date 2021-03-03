@@ -164,3 +164,18 @@ def get_env_var(var_name):
 # 		ret = ""
 #
 # 	return ret
+
+
+def get_aws_account_id():
+	sts = boto3.client('sts')
+	resp = sts.get_caller_identity()
+
+	aws_account_id = resp["Account"]
+
+	if aws_account_id == "":
+		alert("Account ID nao encontrado.", "red")
+		erro(1)
+	else:
+		alert(f"Account ID: {aws_account_id}")
+
+	return aws_account_id

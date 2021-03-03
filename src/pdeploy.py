@@ -34,7 +34,6 @@ def configura_ssh_e_git():
     command(cmd)
 
     init_git()
-
     alert("\n#SSH e git configurado")
 
 
@@ -65,20 +64,6 @@ def help():
     alert ('usage: deploy.py -v init')
     alert ('       deploy.py -v deployArgoCD -n <ns> -a <app_properties>')
     sys.exit(1)
-
-def get_aws_account_id():
-    global AWS_ACCOUNT_ID
-
-    sts = boto3.client('sts')
-    resp = sts.get_caller_identity()
-
-    AWS_ACCOUNT_ID = resp["Account"]
-
-    if AWS_ACCOUNT_ID == "": 
-        alert ("Account ID nao encontrado.", "red")
-        erro(1)
-
-    print (f"Running in {AWS_ACCOUNT_ID}")
 
 
 def main(argv):
