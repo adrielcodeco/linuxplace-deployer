@@ -74,7 +74,7 @@ class Deploy:
             # yq w -i values.yaml 'applications[+].name' 'v1-api-u4c-rodolfo-master'
             #cmd = f"yq w -i values.yaml 'applications[+].name' '{self.release_name}'"
             set_yq("values.yaml", f"applications[+].name", f"{self.release_name}")
-            
+
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).namespace' '{self.ns}'"
         set_yq("values.yaml", f"applications.(name=={self.release_name}).namespace", f"{self.ns}")
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.targetRevision' 'HEAD'"

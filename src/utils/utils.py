@@ -130,9 +130,9 @@ def get_yq(path_file, key):
 
 def set_yq(path_file, key, value, isList=False):
 	if isList:
-		cmd = f"yq w -i {path_file} {key}[+] {value}"
+		cmd = f"yq w -i {path_file} '{key}[+]' '{value}'"
 	else:
-		cmd = f"yq w -i {path_file} {key} {value}"
+		cmd = f"yq w -i {path_file} '{key}' '{value}'"
 
 	alert(f"Comando a ser executado no set yq: {cmd}")
 
