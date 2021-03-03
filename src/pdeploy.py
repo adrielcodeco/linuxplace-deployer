@@ -37,24 +37,26 @@ def configura_ssh_e_git():
     alert("\n#SSH e git configurado")
 
 
-def init(argocd_repo, apps_repo):
+def init(argocd_repo, apps_repo, ns):
     configura_ssh_e_git()
 
-    global CI_PROJECT_PATH
-    CI_PROJECT_PATH = get_env_var("CI_PROJECT_PATH")
-    alert("Pegando variavel de ambiente", "red")
-    print(CI_PROJECT_PATH)
-    project_name = get_regex("\/.*$", CI_PROJECT_PATH)[1:]
+    if ns != "dev":
+        global CI_PROJECT_PATH
+        CI_PROJECT_PATH = get_env_var("CI_PROJECT_PATH")
+        alert("Pegando variavel de ambiente", "red")
+        print(CI_PROJECT_PATH)
+        project_name = get_regex("\/.*$", CI_PROJECT_PATH)[1:]
 
-    global CI_REPOSITORY_URL
-    CI_REPOSITORY_URL = get_env_var("CI_REPOSITORY_URL")
-    base_url = remove_regex(f"\/{project_name}.*$", CI_REPOSITORY_URL)
-    print(base_url)
-    print(base_url+"/api-configs.git")
-    exit (3)
+        global CI_REPOSITORY_URL
+        CI_REPOSITORY_URL = get_env_var("CI_REPOSITORY_URL")
+        base_url = remove_regex(f"\/{project_name}.*$", CI_REPOSITORY_URL)
+        print(base_url)
+        print(base_url+"/api-configs.git")
+        exit (3)
+
+        # fetch_repo(f"{base_url}/api-configs.git", LOCAL_PATH_MS_CONFIG)
 
     fetch_repo(apps_repo,   LOCAL_PATH_APPS)
-    fetch_repo(f"{base_url}/api-configs.git", LOCAL_PATH_MS_CONFIG)
     fetch_repo(argocd_repo, LOCAL_PATH_ARGOCD)
 
 # def build_values(app_name, release_name):
@@ -334,7 +336,7 @@ def main(argv):
     if verb == "deployArgoCD":
         if not (apps_repo and argocd_repo and app_properties and ns) :
             help()
-        init(argocd_repo, apps_repo)
+        init(argocd_repo, apps_repo, ns)
 
         deploy = Deploy(release_suffix, app_properties, ns)
 
