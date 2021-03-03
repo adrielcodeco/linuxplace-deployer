@@ -152,6 +152,8 @@ def chdir(path, imprime=True):
 	except:
 		raise
 
+def get_env_var(var_name):
+	return os.environ[var_name]
 
 # def get_jq(json, key):
 # 	# TODO testar se ja tiver um deploy

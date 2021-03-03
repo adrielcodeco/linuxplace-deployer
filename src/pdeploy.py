@@ -29,7 +29,7 @@ def configura_ssh_e_git():
     cmd = f"ssh-keyscan {host}"
     command(cmd, f"{ssh_path}/known_hosts")
 
-    save_into_file(f"{ssh_path}/id_rsa", os.environ["SSH_PRIVATE_KEY"], "a")
+    save_into_file(f"{ssh_path}/id_rsa", get_env_var("SSH_PRIVATE_KEY"), "a")
     cmd = f"chmod 0600 {ssh_path}/id_rsa"
     command(cmd)
 
@@ -40,17 +40,18 @@ def configura_ssh_e_git():
 def init(argocd_repo, apps_repo):
     configura_ssh_e_git()
 
-    # TODO pegar da variavel de ambiente
     global CI_PROJECT_PATH
-    CI_PROJECT_PATH = "gitlab-org/api-u4c-account"
+    CI_PROJECT_PATH = get_env_var("CI_PROJECT_PATH")
     alert("Pegando variavel de ambiente", "red")
-    exit (3)
+    print(CI_PROJECT_PATH)
     project_name = get_regex("\/.*$", CI_PROJECT_PATH)[1:]
 
-    # TODO pegar da variavel de ambiente
     global CI_REPOSITORY_URL
-    CI_REPOSITORY_URL = "git@gitlab.com:u4crypto/api/api-u4c-account.git"
+    CI_REPOSITORY_URL = get_env_var("CI_REPOSITORY_URL")
     base_url = remove_regex(f"\/{project_name}.*$", CI_REPOSITORY_URL)
+    print(base_url)
+    print(base_url+"/api-configs.git")
+    exit (3)
 
     # TODO descomentar
     #fetch_repo(apps_repo,   LOCAL_PATH_APPS)
@@ -344,8 +345,6 @@ def main(argv):
         deploy.deploy_argocd()
 
         #depois faz a alteracao do argocd
-
-
 
     elif verb == "":
         alert ("verbo inexistente", "red")
