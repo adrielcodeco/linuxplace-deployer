@@ -31,7 +31,8 @@ def git_add_all():
 	command(f"git add -A")
 
 def git_commit_and_push(msg, branch="master"):
-	print(f"git commit -m {msg}; git push origin {branch}")
+	command(f"git commit -m {msg}")
+	command(f"git push origin {branch}")
 
 def add_and_push(msg, branch="master"):
 	#alert(f"# Ultima tag da branch {branch}: {get_last_tag()}")
