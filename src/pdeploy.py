@@ -60,7 +60,7 @@ def init(argocd_repo, apps_repo, ns):
         print(base_url+"/api-configs.git")
         exit (3)
         fetch_repo(f"{base_url}/api-configs.git", LOCAL_PATH_MS_CONFIG)
-        
+
     fetch_repo(apps_repo,   LOCAL_PATH_APPS)
     fetch_repo(argocd_repo, LOCAL_PATH_ARGOCD)
 

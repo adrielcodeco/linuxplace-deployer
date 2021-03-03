@@ -4,8 +4,6 @@ from subprocess import PIPE, Popen
 import json
 from shutil import copyfile
 
-#TODO alterar os yq3
-
 """
 Imprime mensgens na tela em formatos coloridos
 """
@@ -117,7 +115,7 @@ def read_from_file(file_name):
         raise
 
 def get_yq(path_file, key):
-	cmd = f"yq3 r {path_file} {key}"
+	cmd = f"yq r {path_file} {key}"
 	null, out = command(cmd)
 	return out
 
@@ -133,9 +131,9 @@ def get_yq(path_file, key):
 def set_yq(path_file, key, value, key_base_path="", isList=False):
 	# monta a query
 	if isList:
-		cmd = f"yq3 w -i {path_file} {key_base_path}.{key}[+] {value}"
+		cmd = f"yq w -i {path_file} {key_base_path}.{key}[+] {value}"
 	else:
-		cmd = f"yq3 w -i {path_file} {key_base_path}.{key} {value}"
+		cmd = f"yq w -i {path_file} {key_base_path}.{key} {value}"
 
 	alert(f"Comando a ser executado no set yq: {cmd}")
 
