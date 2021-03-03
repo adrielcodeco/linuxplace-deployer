@@ -67,25 +67,22 @@ class Deploy:
         if there_is_deploy:
             # se sim so reescreve sobre o mapa
             # yq w -i values.yaml 'applications.(name==v1-api-u4c-YYY-master).name' 'v1-api-u4c-XXXYYY-master'
-            cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).name' '{self.release_name}'"
+            #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).name' '{self.release_name}'"
+            set_yq("values.yaml", f"applications.(name=={self.release_name}).name", f"{self.release_name}")
         else:
             # caso contrario cria um novo
             # yq w -i values.yaml 'applications[+].name' 'v1-api-u4c-rodolfo-master'
-            cmd = f"yq w -i values.yaml 'applications[+].name' '{self.release_name}'"
-        # name
-        command(cmd)
-        # ns
-        cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).namespace' '{self.ns}'"
-        command(cmd)
-        # source.targetRevision
-        cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.targetRevision' 'HEAD'"
-        command(cmd)
-        # source.path
-        cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.path' 'ms-chart'"
-        command(cmd)
-        # source.repoURL
-        cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL' 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
-        command(cmd)
+            #cmd = f"yq w -i values.yaml 'applications[+].name' '{self.release_name}'"
+            set_yq("values.yaml", f"applications[+].name", f"{self.release_name}")
+            
+        #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).namespace' '{self.ns}'"
+        set_yq("values.yaml", f"applications.(name=={self.release_name}).namespace", f"{self.ns}")
+        #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.targetRevision' 'HEAD'"
+        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.targetRevision", f"HEAD")
+        #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.path' 'ms-chart'"
+        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.path", f"ms-chart")
+        #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL' 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
+        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.repoURL", f"git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git")
 
         null, out = command("cat values.yaml")
 
