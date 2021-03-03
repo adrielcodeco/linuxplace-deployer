@@ -45,6 +45,8 @@ def init(argocd_repo, apps_repo, ns):
     configura_ssh_e_git()
 
     if ns != "dev":
+        # publicacoes em ambiente dev nao precisa buscar informacoes no api-configs
+        # buscam diretamente do proprio diretorio do projeto
         global CI_PROJECT_PATH
         CI_PROJECT_PATH = get_env_var("CI_PROJECT_PATH")
         alert("Pegando variavel de ambiente", "red")
@@ -57,12 +59,8 @@ def init(argocd_repo, apps_repo, ns):
         print(base_url)
         print(base_url+"/api-configs.git")
         exit (3)
-
         fetch_repo(f"{base_url}/api-configs.git", LOCAL_PATH_MS_CONFIG)
-
-    while True:
-        a = "b"
-
+        
     fetch_repo(apps_repo,   LOCAL_PATH_APPS)
     fetch_repo(argocd_repo, LOCAL_PATH_ARGOCD)
 
