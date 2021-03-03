@@ -31,7 +31,7 @@ def git_add_all():
 	command(f"git add -A")
 
 def git_commit_and_push(msg, branch="master"):
-	print(f"git commit -m {msg};echo git push origin {branch}")
+	print(f"git commit -m {msg}; git push origin {branch}")
 
 def add_and_push(msg, branch="master"):
 	#alert(f"# Ultima tag da branch {branch}: {get_last_tag()}")
@@ -44,7 +44,7 @@ def add_and_push(msg, branch="master"):
 		alert("# Nao existe modificacoes e por isso nao exige acoes nesse repositorio")
 		return
 
-# TODO POC
+# CLASS POC
 class Git:
 	last_tag = ""
 	last_commit = ""
