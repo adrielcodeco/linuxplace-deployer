@@ -16,15 +16,19 @@ Configurando chave ssh para conexao com o gitlab.
 """
 
 def configura_ssh_e_git():
-    ssh_path = "~/.ssh"
+    ssh_path = "/root/.ssh"
     host = "gitlab.com"
-    if not os.path.exists(ssh_path):
-        os.makedirs(ssh_path)
+
+    mkdir(ssh_path)
+
+    command("ls -lart /root/")
 
     cmd = "touch " + ssh_path + "/known_hosts"
     command(cmd)
     cmd = "touch " + ssh_path + "/id_rsa"
     command(cmd)
+
+    command("ls "+ssh_path)
 
     cmd = f"ssh-keyscan {host}"
     command(cmd, f"{ssh_path}/known_hosts")
