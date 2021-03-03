@@ -43,7 +43,6 @@ def configura_ssh_e_git():
 
 def init(argocd_repo, apps_repo, ns):
     configura_ssh_e_git()
-
     if ns != "dev":
         # publicacoes em ambiente dev nao precisa buscar informacoes no api-configs
         # buscam diretamente do proprio diretorio do projeto
@@ -67,9 +66,7 @@ def init(argocd_repo, apps_repo, ns):
 def help():
     # TODO arruamr
     alert ('usage: deploy.py -v init')
-    alert ('       deploy.py -v fetchchart          -c <chart_repo> [-b <chart_branch> -r <release_name_override>]')
-    alert ('       deploy.py -v generateHelmRelease -n <ns> -a <app_properties> -i <image_tag> -c <chart_repo>')
-    alert ('       deploy.py -v deployArgoCD        -n <ns> -a <app_properties>')
+    alert ('       deploy.py -v deployArgoCD -n <ns> -a <app_properties>')
     sys.exit(1)
 
 def get_aws_account_id():

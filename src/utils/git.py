@@ -31,15 +31,14 @@ def git_add_all():
 	command(f"git add -A")
 
 def git_commit_and_push(msg, branch="master"):
-	# TODO tirar o echo
-	print(f"echo git commit -m {msg};echo git push origin {branch}")
+	print(f"git commit -m {msg};echo git push origin {branch}")
 
-def add_and_push(branch="master"):
+def add_and_push(msg, branch="master"):
 	#alert(f"# Ultima tag da branch {branch}: {get_last_tag()}")
 	if there_is_modification():
 		alert("# Repositorio com atualizacoes")
 		git_add_all()
-		git_commit_and_push(f"Deploy ArgoCD APP	")
+		git_commit_and_push(f"Deploy {msg}")
 		alert(f"# Commit e Push feitos para origin {branch}")
 	else:
 		alert("# Nao existe modificacoes e por isso nao exige acoes nesse repositorio")

@@ -48,7 +48,7 @@ class Deploy:
             # copia_e_cola(f"../../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml",
             #             f"{self.ns}/{self.release_name}/values.yaml")
 
-        add_and_push()
+        add_and_push(self.release_name)
         chdir(old_path)
         alert(f"# Repositorio App Config configurado")
 
@@ -83,7 +83,7 @@ class Deploy:
         # source.repoURL
         cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL' 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
         command(cmd)
-        add_and_push()
+        add_and_push(self.release_name)
         chdir(old_path)
         alert(f"# ArgoCD Repo configurado")
 
