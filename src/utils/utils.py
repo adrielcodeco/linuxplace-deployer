@@ -8,6 +8,8 @@ from shutil import copyfile
 Imprime mensgens na tela em formatos coloridos
 """
 def alert(msg, color="green"):
+	if color == "orange":
+		print(f"\033[40m{msg}\033[0m") #orange
 	if color == "red":
 		print(f"\033[91m\033[1m{msg}\033[0m") #red and bold
 	else: # green
@@ -77,8 +79,6 @@ def remove_regex(reg, str):
 	except:
 		raise
 
-
-
 """
 Manipulacao de arquivos e diretorios
 """
@@ -134,7 +134,7 @@ def set_yq(path_file, key, value, isList=False):
 	else:
 		cmd = f"yq w -i {path_file} '{key}' '{value}'"
 
-	alert(f"Comando a ser executado no set yq: {cmd}")
+	alert(f"cmd set_yq: {cmd}", "orange")
 
 	command(cmd)
 
@@ -145,7 +145,7 @@ def chdir(path, imprime=True):
 	try:
 		os.chdir(path)
 		if imprime:
-			alert(f"# Diretorio alterado para {os.getcwd()}")
+			alert(f"# Diretorio alterado para {os.getcwd()}", "orange")
 	except:
 		raise
 
@@ -175,6 +175,6 @@ def get_aws_account_id():
 		alert("Account ID nao encontrado.", "red")
 		erro(1)
 	else:
-		alert(f"Account ID: {aws_account_id}")
+		alert(f"Account ID: {aws_account_id}", "orange")
 
 	return aws_account_id

@@ -38,6 +38,8 @@ def configura_ssh_e_git():
 
 
 def init(argocd_repo, apps_repo, ns):
+    null, yq_version = command("yq --version")
+    alert(yq_version, "orange")
     configura_ssh_e_git()
     if ns != "dev":
         # publicacoes em ambiente dev nao precisa buscar informacoes no api-configs
