@@ -33,7 +33,7 @@ def configura_ssh_e_git():
     cmd = f"chmod 0600 {ssh_path}/id_rsa"
     command(cmd)
 
-    command("git config --global user.email \"suporte@linuxplace.com.br\"; git config --global user.name \"LxP Deployer\"")
+    #command("git config --global user.email \"suporte@linuxplace.com.br\"; git config --global user.name \"LxP Deployer\"")
     alert("\n#SSH e git configurado")
 
 
@@ -53,10 +53,9 @@ def init(argocd_repo, apps_repo):
     print(base_url+"/api-configs.git")
     exit (3)
 
-    # TODO descomentar
-    #fetch_repo(apps_repo,   LOCAL_PATH_APPS)
-    #fetch_repo(f"{base_url}/api-configs.git", LOCAL_PATH_MS_CONFIG)
-    #fetch_repo(argocd_repo, LOCAL_PATH_ARGOCD)
+    fetch_repo(apps_repo,   LOCAL_PATH_APPS)
+    fetch_repo(f"{base_url}/api-configs.git", LOCAL_PATH_MS_CONFIG)
+    fetch_repo(argocd_repo, LOCAL_PATH_ARGOCD)
 
 # def build_values(app_name, release_name):
 #     if os.path.exists(LOCAL_CI_VALUES):
