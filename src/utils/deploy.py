@@ -84,11 +84,6 @@ class Deploy:
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL' 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
         set_yq("values.yaml", f"applications.(name=={self.release_name}).source.repoURL", f"git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git")
 
-        null, out = command("cat values.yaml")
-
-        print(out)
-        exit(34)
-
         add_and_push(self.release_name)
         chdir(old_path)
         alert(f"# ArgoCD Repo configurado")

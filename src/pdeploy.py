@@ -36,7 +36,6 @@ def configura_ssh_e_git():
     init_git()
     alert("\n#SSH e git configurado")
 
-
 def init(argocd_repo, apps_repo, ns):
     null, yq_version = command("yq --version")
     alert(yq_version, "orange")

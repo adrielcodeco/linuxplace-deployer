@@ -10,7 +10,7 @@ Imprime mensgens na tela em formatos coloridos
 def alert(msg, color="green"):
 	if color == "orange":
 		print(f"\033[40m{msg}\033[0m") #orange
-	if color == "red":
+	elif color == "red":
 		print(f"\033[91m\033[1m{msg}\033[0m") #red and bold
 	else: # green
 		print(f"\033[92m{msg}\033[0m") #green
