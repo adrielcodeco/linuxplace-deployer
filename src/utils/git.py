@@ -31,7 +31,7 @@ def git_add_all():
 	command(f"git add -A")
 
 def git_commit_and_push(msg, branch="master"):
-	command(f"git commit -m {msg}")
+	command(f"git commit -m '{msg}'")
 	command(f"git push origin {branch}")
 
 def add_and_push(msg, branch="master"):
