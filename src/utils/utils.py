@@ -8,7 +8,7 @@ from shutil import copyfile
 Imprime mensgens na tela em formatos coloridos
 """
 def alert(msg, color="green"):
-	if color == "yellow" and DEBUG == "True":
+	if color == "yellow":
 		print(f"\033[93m{msg}\033[0m") #yellow
 	elif color == "magenta":
 		print(f"\033[95m{msg}\033[0m") #magenta

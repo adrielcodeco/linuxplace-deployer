@@ -51,7 +51,7 @@ class Deploy:
         # adiciona o account id no values
         set_yq(f"{self.ns}/{self.release_name}/values.yaml", "AwsAccountId", get_aws_account_id())
 
-        add_and_push(self.release_name)
+        add_and_push(self.release_name, self.ns)
         chdir(old_path)
         alert(f"# Repositorio App Config configurado")
 
@@ -84,7 +84,7 @@ class Deploy:
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL' 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
         set_yq("values.yaml", f"applications.(name=={self.release_name}).source.repoURL", f"git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git")
 
-        add_and_push(self.release_name)
+        add_and_push(self.release_name, self.ns)
         chdir(old_path)
         alert(f"# ArgoCD Repo configurado")
 

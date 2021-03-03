@@ -39,16 +39,15 @@ def git_commit_and_push(msg, branch="master"):
 	command(f"git commit -m '{msg}'")
 	command(f"git push origin {branch}")
 
-def add_and_push(msg, branch="master"):
+def add_and_push(msg, ns, branch="master"):
 	#alert(f"# Ultima tag da branch {branch}: {get_last_tag()}")
 	if there_is_modification():
 		alert("# Repositorio com atualizacoes", "yellow")
 		git_add_all()
-		git_commit_and_push(f"Deploy {msg}")
+		git_commit_and_push(f"Deploy {msg} {ns}")
 		alert(f"# Commit e Push feitos para origin {branch}", "yellow")
 	else:
 		alert("# Nao existe modificacoes e por isso nao exige acoes nesse repositorio", "yellow")
-		return
 
 # CLASS POC
 class Git:

@@ -38,9 +38,6 @@ def configura_ssh_e_git():
 
 def init(argocd_repo, apps_repo, ns):
     # TODO passar como parametro
-    global DEBUG
-    #DEBUG = get_env_var("DEBUG")
-    DEBUG = True
     configura_ssh_e_git()
     if ns != "dev":
         # publicacoes em ambiente dev nao precisa buscar informacoes no api-configs
