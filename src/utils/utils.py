@@ -1,7 +1,7 @@
 
 import os, sys, getopt, shlex, re
 from subprocess import PIPE, Popen
-import json
+import json, boto3
 from shutil import copyfile
 
 """
