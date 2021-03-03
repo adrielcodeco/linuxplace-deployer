@@ -53,6 +53,9 @@ RUN echo "**** install Python ****" && \
 
 COPY ./src/deploy     /usr/local/bin/deploy
 COPY ./src/assumerole /usr/local/bin/assumerole
-RUN chmod a+x /usr/local/bin/deploy && chmod a+x /usr/local/bin/assumerole 
+COPY ./src/pdeploy.py /usr/local/bin/pdeploy
+COPY ./src/utils/     /usr/local/bin/utils
+RUN chmod a+x /usr/local/bin/deploy && chmod a+x /usr/local/bin/assumerole && chmod a+x /usr/local/bin/pdeploy
+
 
 WORKDIR /apps
