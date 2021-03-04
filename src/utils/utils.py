@@ -89,11 +89,13 @@ def there_is_dir(path):
 
 def rmdir(path):
 	if os.path.exists(path):
-		os.remove(path)
+		shutil.rmtree(path)
+		alert(f"Diretorio {path} removido", "yellow")
 
 def mkdir(path):
     if not os.path.exists(path):
-        os.makedirs(path)
+		os.makedirs(path)
+		alert(f"Diretorio {path} criado", "yellow")
 
 def save_into_file(file_name, information, mode="w"):
 	try:	
