@@ -93,15 +93,15 @@ def rmdir(path):
 		alert(f"Diretorio {path} removido", "yellow")
 
 def mkdir(path):
-    if not os.path.exists(path):
+	if not os.path.exists(path):
 		os.makedirs(path)
 		alert(f"Diretorio {path} criado", "yellow")
 
 def save_into_file(file_name, information, mode="w"):
 	try:	
-	    file_pointer = open(file_name, mode)
-	    file_pointer.write(information)
-	    file_pointer.close()
+		file_pointer = open(file_name, mode)
+		file_pointer.write(information)
+		file_pointer.close()
 	except:
 		raise
 
