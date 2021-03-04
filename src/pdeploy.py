@@ -36,10 +36,9 @@ def configura_ssh_e_git():
     init_git()
     alert("\n#SSH e git configurado")
 
-def init(argocd_repo, apps_repo, ns):
-    # TODO passar como parametro
+def init(argocd_repo, apps_repo, ns, need_api_configs=True):
     configura_ssh_e_git()
-    if ns != "dev":
+    if ns != "dev" and need_api_configs:
         # publicacoes em ambiente dev nao precisa buscar informacoes no api-configs
         # buscam diretamente do proprio diretorio do projeto
         global CI_PROJECT_PATH
@@ -61,8 +60,8 @@ def init(argocd_repo, apps_repo, ns):
 
 def help():
     # TODO arruamr
-    alert ('usage: deploy.py -v init')
-    alert ('       deploy.py -v deployArgoCD -n <ns> -a <app_properties>')
+    alert ('usage: deploy.py -v deploy   -n <ns> -a <app_properties> -c <apps_config> -d <argocd_config> ')
+    alert ('       deploy.py -v undeploy -n <ns> -a <app_properties> -c <apps_config> -d <argocd_config> ')
     sys.exit(1)
 
 
@@ -108,13 +107,18 @@ def main(argv):
             alert ("parametro incorreto", "red")
             help()
 
-    if verb == "deployArgoCD":
-        if not (apps_repo and argocd_repo and app_properties and ns) :
-            help()
+    if not (apps_repo and argocd_repo and app_properties and ns):
+        help()
+        exit(1)
+
+    if verb == "deploy":
         init(argocd_repo, apps_repo, ns)
         deploy = Deploy(release_suffix, app_properties, ns)
-        deploy.create_app_config()
         deploy.deploy_argocd()
+    elif verb == "undeploy":
+        init(argocd_repo, apps_repo, ns, need_api_configs=False)
+        deploy = Deploy(release_suffix, app_properties, ns)
+        deploy.undeploy_argocd()
 
     elif verb == "":
         alert ("verbo inexistente", "red")

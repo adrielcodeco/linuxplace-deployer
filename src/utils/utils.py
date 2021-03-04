@@ -121,23 +121,15 @@ def get_yq(path_file, key):
 	null, out = command(cmd)
 	return out
 
-	# yq2.12
-	# cmd = ['yq'] + ['-y'] + ["." + key] + [path_file] + [" | head -n1"]
-	# print "COMANDO YQ: " + str(cmd)
-	# processa o comando e captura o resultado
-	#result = subprocess.check_output(cmd)
-
-	# retira o \n no final
-	#return result[:-1].decode("utf-8")
+def delete_yq(path_file, key):
+	cmd = f"yq d -i {path_file} {key}"
+	command(cmd)
 
 def set_yq(path_file, key, value, isList=False):
 	if isList:
 		cmd = f"yq w -i {path_file} '{key}[+]' '{value}'"
 	else:
 		cmd = f"yq w -i {path_file} '{key}' '{value}'"
-
-	alert(f"cmd set_yq: {cmd}", "yellow")
-
 	command(cmd)
 
 def pwd():

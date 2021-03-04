@@ -30,6 +30,17 @@ class Deploy:
     def get_release_name(self):
         return self.release_name
 
+    def delete_app_config(self):
+        alert(f"\n# Iniciando configuracao do App Config Repo")
+        old_path = pwd()
+        chdir(f"{LOCAL_PATH_APPS}")
+
+        rmdir(f"{self.ns}/{self.release_name}")
+
+        add_and_push(f"UnDeploy {self.release_name} {self.ns}")
+        chdir(old_path)
+        alert(f"# Repositorio App Config configurado")
+
     def create_app_config(self):
         alert(f"\n# Iniciando configuracao do App Config Repo")
         old_path = pwd()
@@ -51,9 +62,26 @@ class Deploy:
         # adiciona o account id no values
         set_yq(f"{self.ns}/{self.release_name}/values.yaml", "AwsAccountId", get_aws_account_id())
 
-        add_and_push(self.release_name, self.ns)
+        add_and_push(f"Deploy {self.release_name} {self.ns}")
         chdir(old_path)
         alert(f"# Repositorio App Config configurado")
+
+    def delete_argocd_config(self):
+        # TODO situacao o 0 deploys finais
+        alert(f"\n# Iniciando configuracao do ArgoCD Repo")
+        old_path = pwd()
+        path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
+        chdir(f"{path_to_values}")
+        # verifica se existe ja
+        there_is_deploy = get_yq(f"values.yaml", f"'applications.(name=={self.release_name}).name'")
+
+        if there_is_deploy:
+            #cmd = f"yq d -i values.yaml 'applications.(name=={self.release_name}).name'"
+            delete_yq("values.yaml", f"applications.(name=={self.release_name})")
+
+        add_and_push(f"UnDeploy {self.release_name} {self.ns}")
+        chdir(old_path)
+        alert(f"# ArgoCD Repo configurado")
 
     def add_argocd_config(self):
         # TODO situacao o 0 deploys finais
@@ -84,9 +112,14 @@ class Deploy:
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL' 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
         set_yq("values.yaml", f"applications.(name=={self.release_name}).source.repoURL", f"git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git")
 
-        add_and_push(self.release_name, self.ns)
+        add_and_push(f"Deploy {self.release_name} {self.ns}")
         chdir(old_path)
         alert(f"# ArgoCD Repo configurado")
 
     def deploy_argocd(self):
+        self.create_app_config()
         self.add_argocd_config()
+
+    def undeploy_argocd(self):
+        self.delete_app_config()
+        self.delete_argocd_config()
