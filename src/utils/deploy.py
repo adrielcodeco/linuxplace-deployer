@@ -86,8 +86,9 @@ class Deploy:
             #cmd = f"yq d -i values.yaml 'applications.(name=={self.release_name}).name'"
             delete_yq("values.yaml", f"applications.(name=={self.release_name})")
             # https://github.com/mikefarah/yq/issues/493
-            verify_empty_applications_map()
-            add_and_push(f"UnDeploy {self.release_name} {self.ns}")
+
+        verify_empty_applications_map()
+        add_and_push(f"UnDeploy {self.release_name} {self.ns}")
 
         chdir(old_path)
         alert(f"# ArgoCD Repo configurado")
