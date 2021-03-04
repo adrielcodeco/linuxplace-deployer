@@ -88,9 +88,13 @@ def there_is_dir(path):
 	return os.path.exists(path)
 
 def rmdir(path):
-	if os.path.exists(path):
-		shutil.rmtree(path)
-		alert(f"Diretorio {path} removido", "yellow")
+	try:
+		if os.path.exists(path):
+			rmtree(path)
+			alert(f"Diretorio {path} removido", "yellow")
+	except:
+		alert(f"\n# Erro ao remover diretorio {path}")
+		raise
 
 def mkdir(path):
 	if not os.path.exists(path):
