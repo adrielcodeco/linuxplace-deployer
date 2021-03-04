@@ -93,13 +93,17 @@ def rmdir(path):
 			rmtree(path)
 			alert(f"Diretorio {path} removido", "yellow")
 	except:
-		alert(f"\n# Erro ao remover diretorio {path}")
+		alert(f"\n# Erro ao remover diretorio {path}", "red")
 		raise
 
 def mkdir(path):
-	if not os.path.exists(path):
-		os.makedirs(path)
-		alert(f"Diretorio {path} criado", "yellow")
+	try:
+		if not os.path.exists(path):
+			os.makedirs(path)
+			alert(f"Diretorio {path} criado", "yellow")
+	except:
+		alert(f"Erro ao criar o diretorio {path}", "red")
+		raise
 
 def save_into_file(file_name, information, mode="w"):
 	try:	
@@ -107,6 +111,7 @@ def save_into_file(file_name, information, mode="w"):
 		file_pointer.write(information)
 		file_pointer.close()
 	except:
+		alert(f"Erro ao salvar no arquivo {file_name}", "red")
 		raise
 
 def read_from_file(file_name):
@@ -119,7 +124,7 @@ def read_from_file(file_name):
         return information
     except:
         if file_pointer == "":
-            alert(f"\n# Nao existe o arquivo {file_name} para ser lido.")
+            alert(f"\n# Nao existe o arquivo {file_name} para ser lido", "red")
         raise
 
 def get_yq(path_file, key):
@@ -147,23 +152,17 @@ def chdir(path, imprime=True):
 		if imprime:
 			alert(f"# Diretorio alterado para {os.getcwd()}", "yellow")
 	except:
+		alert(f"# Erro ao trocar para o diretorio {path}", "red")
 		raise
 
 def get_env_var(var_name):
-	return os.environ[var_name]
-
-# def get_jq(json, key):
-# 	# TODO testar se ja tiver um deploy
-# 	ret = ""
-# 	try:
-# 		# print jq.first(key, json)
-# 		ret = "trocar"
-# 	except Exception as e:
-# 		# print "asdfk"
-# 		ret = ""
-#
-# 	return ret
-
+	try:
+		var = os.environ[var_name]
+		alert(f"# Variavel {var_name} recuperada", "yellow")
+		return var
+	except:
+		alert(f"# Variavel {var_name} nao recuperada", "red")
+		raise
 
 def get_aws_account_id():
 	sts = boto3.client('sts')

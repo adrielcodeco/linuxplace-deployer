@@ -30,6 +30,13 @@ class Deploy:
     def get_release_name(self):
         return self.release_name
 
+    def verify_empty_applications_map(self, values_path):
+        null, names = get_yq(values_path, 'applications[*].name')
+        alert(f"# Lista do .applications\n{names}", "yellow")
+        if names == "":
+            delete_yq(values_path, "applications")
+            alert(f"# Mapa .applications removido", "yellow")
+
     def delete_app_config(self):
         alert(f"\n# Iniciando configuracao do App Config Repo")
         old_path = pwd()
@@ -78,8 +85,10 @@ class Deploy:
         if there_is_deploy:
             #cmd = f"yq d -i values.yaml 'applications.(name=={self.release_name}).name'"
             delete_yq("values.yaml", f"applications.(name=={self.release_name})")
+            # https://github.com/mikefarah/yq/issues/493
+            verify_empty_applications_map()
+            add_and_push(f"UnDeploy {self.release_name} {self.ns}")
 
-        add_and_push(f"UnDeploy {self.release_name} {self.ns}")
         chdir(old_path)
         alert(f"# ArgoCD Repo configurado")
 
