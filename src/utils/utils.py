@@ -2,7 +2,7 @@
 import os, sys, getopt, shlex, re
 from subprocess import PIPE, Popen
 import json, boto3
-from shutil import copyfile
+from shutil import copyfile, rmtree
 
 """
 Imprime mensgens na tela em formatos coloridos
