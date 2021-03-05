@@ -31,7 +31,7 @@ class Deploy:
         return self.release_name
 
     def verify_empty_applications_map(self, values_path):
-        null, names = get_yq(values_path, 'applications[*].name')
+        names = get_yq(values_path, 'applications[*].name')
         alert(f"# Lista do .applications\n{names}", "yellow")
         if names == "":
             delete_yq(values_path, "applications")

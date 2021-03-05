@@ -128,12 +128,16 @@ def read_from_file(file_name):
         raise
 
 def get_yq(path_file, key):
-	cmd = f"yq r {path_file} {key}"
-	null, out = command(cmd)
-	return out
+	try:
+		cmd = f"yq r {path_file} '{key}'"
+		null, out = command(cmd)
+		return out
+	except:
+		alert(f"\n# Erro no get yq: {cmd}", "yellow")
+		raise
 
 def delete_yq(path_file, key):
-	cmd = f"yq d -i {path_file} {key}"
+	cmd = f"yq d -i {path_file} '{key}'"
 	command(cmd)
 
 def set_yq(path_file, key, value, isList=False):
