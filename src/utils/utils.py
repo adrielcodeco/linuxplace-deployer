@@ -20,10 +20,13 @@ def alert(msg, color="green"):
 """
 Executa comandos de sistemas
 """
-def command(cmd, output=PIPE):
+def command(command, output=PIPE, sensitive=True):
+	cmd = command
 	try:
 		if output == PIPE:
 			run = Popen(shlex.split(cmd), stderr=PIPE, stdout=output)
+			if sensitive:
+				cmd = "XXX" # Limpa comando caso tenha variavel sensivel
 			out, err = run.communicate()
 			if run.returncode == 0:
 				return True, out[:-1].decode("utf-8")
@@ -34,18 +37,22 @@ def command(cmd, output=PIPE):
 		else:
 			with open(output, "a") as standard_out:
 				run = Popen(shlex.split(cmd), stderr=PIPE, stdout=standard_out)
+				if sensitive:
+					cmd = "XXX" # Limpa comando caso tenha variavel sensivel
 				run.communicate()
 				if run.returncode == 0:
 					return True
 				else:
 					alert(f"# Falha ao executar comando {cmd}, erro: {err}", "red")
 					exit(1)
-					#return False
 	except NameError as e:
 		alert(f"\n# Erro ao executar {cmd}", "red")
 		alert(e, "red")
 		exit(1)
 	except:
+		if sensitive:
+			alert("# Falha ao executar comando.", "red")
+			exit(1)
 		raise
 """
 Copy and Paste

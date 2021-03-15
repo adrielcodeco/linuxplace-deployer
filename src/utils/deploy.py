@@ -9,6 +9,7 @@ class Deploy:
     pod_name = ""
     events = {}
     ns = ""
+    argocd_timeout = 300
 
     def __init__(self, release_suffix, app_properties, ns):
         alert(f"\n# Instanciando o Deploy")
@@ -54,17 +55,12 @@ class Deploy:
         chdir(f"{LOCAL_PATH_APPS}")
         mkdir(f"{self.ns}/{self.release_name}")
 
-        # TODO situacao o 0 deploys finais
-
         if self.ns == "dev":
             copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
         else:
-            alert(f"\n#BETA: Deploy em hml e prd ainda nao concluido", "red")
-            exit(1)
-            # TODO SE FOR HML E PRD USA O COPIA E COLA, DEV NAO USA
-            # TODO Alterar o path ../.. pos eu coloquei o temp nos globais
-            # copia_e_cola(f"../../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml",
-            #             f"{self.ns}/{self.release_name}/values.yaml")
+            alert(f"# Copiando values.yaml do {LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml")
+            copia_e_cola(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml",
+                         f"{self.ns}/{self.release_name}/values.yaml")
 
         # adiciona o account id no values
         set_yq(f"{self.ns}/{self.release_name}/values.yaml", "AwsAccountId", get_aws_account_id())
@@ -126,10 +122,22 @@ class Deploy:
         chdir(old_path)
         alert(f"# ArgoCD Repo configurado")
 
+    def sync(self):
+        alert(f"\n# Iniciando ArgoCD Sync")
+        env = string.upper(self.ns)
+        token = get_env_var(f"ARGOCD_TOKEN_{env}_PROJECT")
+        flags = f"--prune --timeout {self.argocd_timeout} --insecure --auth-token {token}"
+        command(f"argocd app sync {self.release_name} {flags}", sensitive=True)
+        flags = token = None
+        alert(f"# ArgoCD sincronizado, execute o comando abaixo para verificar o status do Deploy:")
+        alert(f"$ kubectl port-forward svc/argocd-server -n argocd 8080:443")
+
     def deploy_argocd(self):
         self.create_app_config()
         self.add_argocd_config()
+        self.sync()
 
     def undeploy_argocd(self):
         self.delete_app_config()
         self.delete_argocd_config()
+        self.sync()
