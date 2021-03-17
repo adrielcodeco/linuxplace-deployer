@@ -123,13 +123,14 @@ class Deploy:
         alert(f"# ArgoCD Repo configurado")
 
     def sync(self):
-        alert(f"\n# Iniciando ArgoCD Sync")
-        env = string.upper(self.ns)
-        token = get_env_var(f"ARGOCD_TOKEN_{env}_PROJECT")
-        flags = f"--prune --timeout {self.argocd_timeout} --insecure --auth-token {token}"
-        command(f"argocd app sync {self.release_name} {flags}", sensitive=True)
-        flags = token = None
-        alert(f"# ArgoCD sincronizado, execute o comando abaixo para verificar o status do Deploy:")
+        #alert(f"\n# Iniciando ArgoCD Sync", "yellow")
+        #env = string.upper(self.ns)
+        #token = get_env_var(f"ARGOCD_TOKEN_{env}_PROJECT")
+        #flags = f"--prune --timeout {self.argocd_timeout} --insecure --auth-token {token}"
+        #command(f"argocd app sync {self.release_name} {flags}", sensitive=True)
+        #flags = token = None
+        #alert(f"# ArgoCD sincronizado, execute o comando abaixo para verificar o status do Deploy:")
+        alert(f"# Execute o comando abaixo para verificar o status do Deploy, e depois abra no seu navegador o endereco https://localhost:8080/")
         alert(f"$ kubectl port-forward svc/argocd-server -n argocd 8080:443")
 
     def deploy_argocd(self):
