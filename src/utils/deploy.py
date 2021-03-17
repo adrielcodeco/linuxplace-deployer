@@ -10,12 +10,22 @@ class Deploy:
     events = {}
     ns = ""
     argocd_timeout = 300
+    CI_COMMIT_SHORT_SHA = ""
+    tag_name = ""
+
+
+    def create_app_config_tag_name(self):
+        tag_name = f"{self.release_name}-{self.ns}-{self.CI_COMMIT_SHORT_SHA}"
+        return tag_name
 
     def __init__(self, release_suffix, app_properties, ns):
         alert(f"\n# Instanciando o Deploy")
         self.release_name = self.set_release_name(release_suffix, app_properties)
         self.ns = ns
         self.basename = get_yq(app_properties, "basename")
+        self.CI_COMMIT_SHORT_SHA = get_env_var("CI_COMMIT_SHORT_SHA")
+        self.tag_name = self.create_app_config_tag_name()
+
         alert(f"\n# Microsservico: {self.release_name} no ambiente {self.ns}")
         alert(f"\n# Instancia construida")
 
@@ -58,19 +68,24 @@ class Deploy:
         if self.ns == "dev":
             copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
         else:
-            alert(f"# Copiando values.yaml do {LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml")
-            copia_e_cola(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml",
-                         f"{self.ns}/{self.release_name}/values.yaml")
+            # Checa se existe algum deploy ja com essa tag pois pode ser uma tag de deploy antigo
+            if there_is_this_tag(self.tag_name):
+                git_checkout(self.tag_name)
+                alert(f"# Deploy encontrado no historico de tags do repositorio app-config, reutilizando ({self.tag_name})",)
+                return
+            else:
+                alert(f"# Deploy nao encontrado no historico de tags do repositorio app-config, criando uma tag nova ({self.tag_name})")
+                alert(f"# Copiando values.yaml do {LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml")
+                copia_e_cola(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml",
+                             f"{self.ns}/{self.release_name}/values.yaml")
 
         # adiciona o account id no values
         set_yq(f"{self.ns}/{self.release_name}/values.yaml", "AwsAccountId", get_aws_account_id())
-
-        add_and_push(f"Deploy {self.release_name} {self.ns}")
+        add_and_push_with_tag(f"Deploy {self.release_name} {self.ns}", self.tag_name)
         chdir(old_path)
         alert(f"# Repositorio App Config configurado")
 
     def delete_argocd_config(self):
-        # TODO situacao o 0 deploys finais
         alert(f"\n# Iniciando configuracao do ArgoCD Repo")
         old_path = pwd()
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
@@ -90,7 +105,6 @@ class Deploy:
         alert(f"# ArgoCD Repo configurado")
 
     def add_argocd_config(self):
-        # TODO situacao o 0 deploys finais
         alert(f"\n# Iniciando configuracao do ArgoCD Repo")
         old_path = pwd()
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
@@ -112,11 +126,13 @@ class Deploy:
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).namespace' '{self.ns}'"
         set_yq("values.yaml", f"applications.(name=={self.release_name}).namespace", f"{self.ns}")
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.targetRevision' 'HEAD'"
-        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.targetRevision", f"HEAD")
+        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.targetRevision", f"{self.tag_name}")
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.path' 'ms-chart'"
         set_yq("values.yaml", f"applications.(name=={self.release_name}).source.path", f"ms-chart")
-        #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL' 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
-        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.repoURL", f"git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git")
+        #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL'
+        # 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
+        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.repoURL",
+               f"git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git")
 
         add_and_push(f"Deploy {self.release_name} {self.ns}")
         chdir(old_path)
@@ -130,8 +146,9 @@ class Deploy:
         #command(f"argocd app sync {self.release_name} {flags}", sensitive=True)
         #flags = token = None
         #alert(f"# ArgoCD sincronizado, execute o comando abaixo para verificar o status do Deploy:")
-        alert(f"# Execute o comando abaixo para verificar o status do Deploy, e depois abra no seu navegador o endereco https://localhost:8080/")
-        alert(f"$ kubectl port-forward svc/argocd-server -n argocd 8080:443")
+        alert(f"# Para verificar o status, faca login no U4CRYPTO-SHARED-CLUSTER, execute o comando abaixo para verificar "
+              f"o status do Deploy, e depois abra no seu navegador o endereco https://localhost:8080/", "yellow")
+        alert(f"$ kubectl port-forward svc/argocd-server -n argocd 8080:443", "yellow")
 
     def deploy_argocd(self):
         self.create_app_config()

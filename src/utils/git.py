@@ -32,41 +32,50 @@ def there_is_modification():
 	else:
 		return False
 
+def there_is_this_tag(tag_name):
+	there_is = command(f"git tag -l {tag_name}")
+	if there_is:
+		alert(f"# Tag {tag_name} existe", "yellow")
+		return True
+	else:
+		alert(f"# Tag {tag_name} nao existe", "yellow")
+		return False
+
 def git_add_all():
 	command(f"git add -A")
 
-def git_commit_and_push(msg, branch="master"):
+def git_commit(msg):
 	command(f"git commit -m '{msg}'")
-	command(f"git push origin {branch}")
+
+def git_tag(name):
+	command(f"git tag '{name}'")
+
+def git_checkout(target):
+	command(f"git checkout {target}")
+
+def git_push(there_is_tag=False, branch="master"):
+	arg = ""
+	if there_is_tag:
+		arg = f"--tags"
+	command(f"git push origin {branch} {arg}")
 
 def add_and_push(msg, branch="master"):
-	#alert(f"# Ultima tag da branch {branch}: {get_last_tag()}")
 	if there_is_modification():
 		alert("# Repositorio com atualizacoes", "yellow")
 		git_add_all()
-		git_commit_and_push(msg)
+		git_commit(msg)
+		git_push()
 		alert(f"# Commit e Push feitos para origin {branch}", "yellow")
 	else:
 		alert("# Nao existe modificacoes e por isso nao exige acoes nesse repositorio", "yellow")
 
-# CLASS POC
-class Git:
-	last_tag = ""
-	last_commit = ""
-
-	def __init__(self):
-		self.last_tag = self.get_last_tag()
-
-	#git add
-	#if [ -n "$(git status -uno --porcelain)" ]; then git add -A && git commit -m "Deploy ${release_name}" && git push origin master; else echo "Nada a commitar!"; fi
-
-	#git new tag
-
-
-	#git get last tag
-	def get_last_tag(self):
-		null, out = command(f"git describe --abbrev=0 --tag")
-		return out
-
-
-#git push
+def add_and_push_with_tag(msg, tag_name, branch="master"):
+	if there_is_modification():
+		alert("# Repositorio com atualizacoes", "yellow")
+		git_add_all()
+		git_commit(msg)
+		git_tag(tag_name)
+		git_push()
+		alert(f"# Commit, Tag e Push feitos para origin {branch}", "yellow")
+	else:
+		alert("# Nao existe modificacoes e por isso nao exige acoes nesse repositorio", "yellow")
