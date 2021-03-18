@@ -9,9 +9,10 @@ class Deploy:
     pod_name = ""
     events = {}
     ns = ""
-    argocd_timeout = 300
     CI_COMMIT_SHORT_SHA = ""
     tag_name = ""
+    ARGOCD_AUTH_TOKEN = ""
+    ARGOCD_SERVER = "localhost:8080"
 
 
     def create_app_config_tag_name(self):
@@ -25,6 +26,7 @@ class Deploy:
         self.ns = ns
         self.basename = get_yq(app_properties, "basename")
         self.CI_COMMIT_SHORT_SHA = get_env_var("CI_COMMIT_SHORT_SHA")
+        self.ARGOCD_AUTH_TOKEN = get_env_var(f"ARGOCD_AUTH_TOKEN_{self.ns}")
         self.tag_name = self.create_app_config_tag_name()
 
         alert(f"# Microsservico: {self.release_name} no ambiente {self.ns}")
@@ -75,33 +77,32 @@ class Deploy:
 
     def create_app_config(self):
         alert(f"\n# Iniciando configuracao do App Config Repo", "green")
-
+        # Checa se ja existe tag no repo api_configs
         if self.ns != "dev":
+            alert("# Checando tag no repositorio api_configs")
             self.there_is_tag_ms_config()
-
+        else:
+            alert("# Ambiente dev nao utiliza repositorio api_configs, pulando checagem de tag")
         old_path = pwd()
         chdir(f"{LOCAL_PATH_APPS}")
-        mkdir(f"{self.ns}/{self.release_name}")
 
-        if self.ns == "dev":
-            copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
-        else:
+        if there_is_this_tag(self.tag_name):
+            git_checkout(self.tag_name)
             # Checa se existe algum deploy ja com essa tag pois pode ser uma tag de deploy antigo
-            if there_is_this_tag(self.tag_name):
-                git_checkout(self.tag_name)
-                alert(f"# Deploy encontrado no historico de tags do repositorio app-config, reutilizando ({self.tag_name})",)
-                chdir(old_path)
-                alert(f"# Repositorio App Config configurado", "green")
-                return
+            alert(f"# Deploy encontrado no historico de tags do repositorio app-config, reutilizando ({self.tag_name})", )
+        else:
+            mkdir(f"{self.ns}/{self.release_name}")
+            if self.ns == "dev":
+                copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
             else:
                 alert(f"# Deploy nao encontrado no historico de tags do repositorio app-config, criando uma tag nova ({self.tag_name})")
                 alert(f"# Copiando values.yaml do {LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml")
                 copia_e_cola(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml",
                              f"{self.ns}/{self.release_name}/values.yaml")
 
-        # adiciona o account id no values
-        set_yq(f"{self.ns}/{self.release_name}/values.yaml", "AwsAccountId", get_aws_account_id())
-        add_and_push_with_tag(f"Deploy {self.release_name} {self.ns}", self.tag_name)
+            # adiciona o account id no values
+            set_yq(f"{self.ns}/{self.release_name}/values.yaml", "AwsAccountId", get_aws_account_id())
+            add_and_push_with_tag(f"Deploy {self.release_name} {self.ns}", self.tag_name)
         chdir(old_path)
         alert(f"# Repositorio App Config configurado", "green")
 
@@ -159,13 +160,9 @@ class Deploy:
         alert(f"# ArgoCD Repo configurado", "green")
 
     def sync(self):
-        #alert(f"\n# Iniciando ArgoCD Sync", "yellow")
-        #env = string.upper(self.ns)
-        #token = get_env_var(f"ARGOCD_TOKEN_{env}_PROJECT")
-        #flags = f"--prune --timeout {self.argocd_timeout} --insecure --auth-token {token}"
-        #command(f"argocd app sync {self.release_name} {flags}", sensitive=True)
-        #flags = token = None
-        #alert(f"# ArgoCD sincronizado, execute o comando abaixo para verificar o status do Deploy:")
+        alert(f"\n# Iniciando ArgoCD Sync", "yellow")
+        flags = f"--prune --timeout {DEPLOY_TIMEOUT} --server {self.ARGOCD_SERVER} --auth-token {self.ARGOCD_AUTH_TOKEN}"
+        command(f"argocd app sync {self.ns}-apps {flags}")
         alert(f"# Para verificar o status, faca login no U4CRYPTO-SHARED-CLUSTER, execute o comando abaixo para verificar "
               f"o status do Deploy, e depois abra no seu navegador o endereco https://localhost:8080/", "yellow")
         alert(f"$ kubectl port-forward svc/argocd-server -n argocd 8080:443", "yellow")
