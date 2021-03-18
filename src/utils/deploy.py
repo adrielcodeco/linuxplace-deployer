@@ -114,11 +114,11 @@ class Deploy:
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
         chdir(f"{path_to_values}")
         # verifica se existe ja
-        there_is_deploy = get_yq(f"values.yaml", f"'applications.(name=={self.release_name}).name'")
+        there_is_deploy = get_yq(f"values.yaml", f"'applications.(name=={self.release_name}-{self.ns}).name'")
 
         if there_is_deploy:
             #cmd = f"yq d -i values.yaml 'applications.(name=={self.release_name}).name'"
-            delete_yq("values.yaml", f"applications.(name=={self.release_name})")
+            delete_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns})")
             # https://github.com/mikefarah/yq/issues/493
 
         self.verify_empty_applications_map("values.yaml")
@@ -133,18 +133,18 @@ class Deploy:
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
         chdir(f"{path_to_values}")
         # verifica se existe ja
-        there_is_deploy = get_yq(f"values.yaml", f"'applications.(name=={self.release_name}).name'")
+        there_is_deploy = get_yq(f"values.yaml", f"'applications.(name=={self.release_name}-{self.ns}).name'")
 
         if there_is_deploy:
             # se sim so reescreve sobre o mapa
             # yq w -i values.yaml 'applications.(name==v1-api-u4c-YYY-master).name' 'v1-api-u4c-XXXYYY-master'
             #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).name' '{self.release_name}'"
-            set_yq("values.yaml", f"applications.(name=={self.release_name}).name", f"{self.release_name}")
+            set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).name", f"{self.release_name}-{self.ns}")
         else:
             # caso contrario cria um novo
             # yq w -i values.yaml 'applications[+].name' 'v1-api-u4c-rodolfo-master'
             #cmd = f"yq w -i values.yaml 'applications[+].name' '{self.release_name}'"
-            set_yq("values.yaml", f"applications[+].name", f"{self.release_name}")
+            set_yq("values.yaml", f"applications[+].name", f"{self.release_name}-{self.ns}")
 
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).namespace' '{self.ns}'"
         set_yq("values.yaml", f"applications.(name=={self.release_name}).namespace", f"{self.ns}")
