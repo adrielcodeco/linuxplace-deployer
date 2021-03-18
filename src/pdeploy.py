@@ -48,7 +48,7 @@ def init(argocd_repo, apps_repo, ns, need_api_configs=True):
         print(CI_REPOSITORY_URL)
 
         # removendo o nome do projeto + '.git'
-        base_url = CI_REPOSITORY_URL[:-len(CI_PROJECT_NAME)+3]
+        base_url = CI_REPOSITORY_URL[:-(len(CI_PROJECT_NAME)+3)]
         print(base_url)
         fetch_repo(f"{base_url}api-configs.git", LOCAL_PATH_MS_CONFIG)
 
