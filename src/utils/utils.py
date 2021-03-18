@@ -96,6 +96,10 @@ Manipulacao de arquivos e diretorios
 def there_is_dir(path):
 	return os.path.exists(path)
 
+def ls(path=""):
+	null, out = command(f"ls {path}")
+	alert(out)
+
 def rmdir(path):
 	try:
 		if os.path.exists(path):

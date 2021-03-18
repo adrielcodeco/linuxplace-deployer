@@ -93,6 +93,12 @@ class Deploy:
             else:
                 alert(f"# Deploy nao encontrado no historico de tags do repositorio app-config, criando uma tag nova ({self.tag_name})")
                 alert(f"# Copiando values.yaml do {LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml")
+                ls()
+                ls("..")
+                ls(f"../{LOCAL_PATH_MS_CONFIG}")
+                ls(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}")
+                ls(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}")
+                ls(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes")
                 copia_e_cola(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml",
                              f"{self.ns}/{self.release_name}/values.yaml")
 
