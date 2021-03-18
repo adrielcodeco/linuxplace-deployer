@@ -26,7 +26,7 @@ class Deploy:
         self.ns = ns
         self.basename = get_yq(app_properties, "basename")
         self.CI_COMMIT_SHORT_SHA = get_env_var("CI_COMMIT_SHORT_SHA")
-        self.ARGOCD_AUTH_TOKEN = get_env_var("ARGOCD_AUTH_TOKEN_"+upper(self.ns))
+        self.ARGOCD_AUTH_TOKEN = get_env_var("ARGOCD_AUTH_TOKEN_"+string.upper(self.ns))
         self.tag_name = self.create_app_config_tag_name()
 
         alert(f"# Microsservico: {self.release_name} no ambiente {self.ns}")
