@@ -16,6 +16,7 @@ class Deploy:
 
     def create_app_config_tag_name(self):
         tag_name = f"{self.release_name}-{self.ns}-{self.CI_COMMIT_SHORT_SHA}"
+        alert(f"# Tag name: {tag_name}", "yellow")
         return tag_name
 
     def __init__(self, release_suffix, app_properties, ns):
@@ -27,6 +28,7 @@ class Deploy:
         self.tag_name = self.create_app_config_tag_name()
 
         alert(f"\n# Microsservico: {self.release_name} no ambiente {self.ns}")
+        alert(f"# Tag name: {self.tag_name}")
         alert(f"\n# Instancia construida")
 
     def set_release_name(self, release_suffix, app_properties):
@@ -59,8 +61,23 @@ class Deploy:
         chdir(old_path)
         alert(f"# Repositorio App Config configurado")
 
+    def there_is_tag_ms_config(self):
+        old_path = pwd()
+        chdir(f"{LOCAL_PATH_MS_CONFIG}")
+        there_is_tag = there_is_this_tag(self.tag_name)
+
+        if there_is_tag:
+            git_checkout(self.tag_name)
+        else:
+            tag_and_push(f"Deploy {self.release_name} {self.ns}", self.tag_name)
+
+        chdir(old_path)
+
     def create_app_config(self):
         alert(f"\n# Iniciando configuracao do App Config Repo")
+
+        self.there_is_tag_ms_config()
+
         old_path = pwd()
         chdir(f"{LOCAL_PATH_APPS}")
         mkdir(f"{self.ns}/{self.release_name}")

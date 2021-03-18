@@ -41,20 +41,11 @@ def init(argocd_repo, apps_repo, ns, need_api_configs=True):
     if ns != "dev" and need_api_configs:
         # publicacoes em ambiente dev nao precisa buscar informacoes no api-configs
         # buscam diretamente do proprio diretorio do projeto
-
         CI_PROJECT_NAME = get_env_var("CI_PROJECT_NAME")
         CI_PROJECT_URL  = get_env_var("CI_PROJECT_URL")
-
-        print(CI_PROJECT_NAME)
-        print(CI_PROJECT_URL)
-
         base_url = CI_PROJECT_URL[:-len(CI_PROJECT_NAME)]
-
-        print(f"base_url: {base_url}")
-
-        print(base_url+"/api-configs.git")
-        exit (3)
-        fetch_repo(f"{base_url}/api-configs.git", LOCAL_PATH_MS_CONFIG)
+        exit(31)
+        fetch_repo(f"{base_url}api-configs.git", LOCAL_PATH_MS_CONFIG)
 
     fetch_repo(apps_repo,   LOCAL_PATH_APPS)
     fetch_repo(argocd_repo, LOCAL_PATH_ARGOCD)
