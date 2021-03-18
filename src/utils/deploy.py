@@ -90,6 +90,8 @@ class Deploy:
             if there_is_this_tag(self.tag_name):
                 git_checkout(self.tag_name)
                 alert(f"# Deploy encontrado no historico de tags do repositorio app-config, reutilizando ({self.tag_name})",)
+                chdir(old_path)
+                alert(f"# Repositorio App Config configurado", "green")
                 return
             else:
                 alert(f"# Deploy nao encontrado no historico de tags do repositorio app-config, criando uma tag nova ({self.tag_name})")
