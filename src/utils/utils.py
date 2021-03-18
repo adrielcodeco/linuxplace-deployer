@@ -20,13 +20,13 @@ def alert(msg, color="green"):
 """
 Executa comandos de sistemas
 """
-def command(command, output=PIPE, sensitive=True):
+def command(command, output=PIPE, sensitive=False):
 	cmd = command
 	try:
 		if output == PIPE:
 			run = Popen(shlex.split(cmd), stderr=PIPE, stdout=output)
 			if sensitive:
-				cmd = "XXX" # Limpa comando caso tenha variavel sensivel
+				cmd = "<<Sensive>>" # Limpa comando caso tenha variavel sensivel
 			out, err = run.communicate()
 			if run.returncode == 0:
 				return True, out[:-1].decode("utf-8")
@@ -38,7 +38,7 @@ def command(command, output=PIPE, sensitive=True):
 			with open(output, "a") as standard_out:
 				run = Popen(shlex.split(cmd), stderr=PIPE, stdout=standard_out)
 				if sensitive:
-					cmd = "XXX" # Limpa comando caso tenha variavel sensivel
+					cmd = "<<Sensive>>" # Limpa comando caso tenha variavel sensivel
 				run.communicate()
 				if run.returncode == 0:
 					return True
