@@ -97,8 +97,10 @@ def there_is_dir(path):
 	return os.path.exists(path)
 
 def ls(path=""):
+	alert(f"Executando ls {path}", "yellow")
 	null, out = command(f"ls {path}")
 	alert(out)
+
 
 def rmdir(path):
 	try:
