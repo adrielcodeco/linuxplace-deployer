@@ -12,7 +12,7 @@ class Deploy:
     CI_COMMIT_SHORT_SHA = ""
     tag_name = ""
     ARGOCD_AUTH_TOKEN = ""
-    ARGOCD_SERVER = "localhost:8080"
+    ARGOCD_SERVER = "argocd-server.argocd.svc.cluster.local"
 
 
     def create_app_config_tag_name(self):
