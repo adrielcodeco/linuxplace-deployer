@@ -161,7 +161,7 @@ class Deploy:
 
     def sync(self):
         alert(f"\n# Iniciando ArgoCD Sync", "yellow")
-        flags = f"--prune --timeout {DEPLOY_TIMEOUT} --server {self.ARGOCD_SERVER} --auth-token {self.ARGOCD_AUTH_TOKEN}"
+        flags = f"--prune --insecure --timeout {DEPLOY_TIMEOUT} --server {self.ARGOCD_SERVER} --auth-token {self.ARGOCD_AUTH_TOKEN}"
         command(f"argocd app sync {self.ns}-apps {flags}")
         alert(f"# Para verificar o status, faca login no U4CRYPTO-SHARED-CLUSTER, execute o comando abaixo para verificar "
               f"o status do Deploy, e depois abra no seu navegador o endereco https://localhost:8080/", "yellow")
