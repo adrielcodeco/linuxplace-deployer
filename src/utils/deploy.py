@@ -76,7 +76,8 @@ class Deploy:
     def create_app_config(self):
         alert(f"\n# Iniciando configuracao do App Config Repo", "green")
 
-        self.there_is_tag_ms_config()
+        if self.ns != "dev":
+            self.there_is_tag_ms_config()
 
         old_path = pwd()
         chdir(f"{LOCAL_PATH_APPS}")
@@ -93,12 +94,6 @@ class Deploy:
             else:
                 alert(f"# Deploy nao encontrado no historico de tags do repositorio app-config, criando uma tag nova ({self.tag_name})")
                 alert(f"# Copiando values.yaml do {LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml")
-                ls()
-                ls("..")
-                ls(f"../{LOCAL_PATH_MS_CONFIG}")
-                ls(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}")
-                ls(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}")
-                ls(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes")
                 copia_e_cola(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml",
                              f"{self.ns}/{self.release_name}/values.yaml")
 
