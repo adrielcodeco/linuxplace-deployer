@@ -34,6 +34,8 @@ def there_is_modification():
 
 def there_is_this_tag(tag_name):
 	there_is = command(f"git tag -l {tag_name}")
+	alert(f"# Output Git Tag:", "yellow")
+
 	if there_is:
 		alert(f"# Tag {tag_name} existe", "yellow")
 		return True

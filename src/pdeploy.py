@@ -116,5 +116,6 @@ def main(argv):
         alert ("verbo inexistente", "red")
         help()
 
+    alert(f"# Job Finalizado com sucesso", "green")
 if __name__ == '__main__':
     main(sys.argv[1:])

@@ -20,16 +20,16 @@ class Deploy:
         return tag_name
 
     def __init__(self, release_suffix, app_properties, ns):
-        alert(f"\n# Instanciando o Deploy")
+        alert(f"\n# Instanciando o Deploy", "green")
         self.release_name = self.set_release_name(release_suffix, app_properties)
         self.ns = ns
         self.basename = get_yq(app_properties, "basename")
         self.CI_COMMIT_SHORT_SHA = get_env_var("CI_COMMIT_SHORT_SHA")
         self.tag_name = self.create_app_config_tag_name()
 
-        alert(f"\n# Microsservico: {self.release_name} no ambiente {self.ns}")
+        alert(f"# Microsservico: {self.release_name} no ambiente {self.ns}")
         alert(f"# Tag name: {self.tag_name}")
-        alert(f"\n# Instancia construida")
+        alert(f"# Instancia construida", "green")
 
     def set_release_name(self, release_suffix, app_properties):
         api_version = get_yq(app_properties, "apiVersion")
@@ -74,7 +74,7 @@ class Deploy:
         chdir(old_path)
 
     def create_app_config(self):
-        alert(f"\n# Iniciando configuracao do App Config Repo")
+        alert(f"\n# Iniciando configuracao do App Config Repo", "green")
 
         self.there_is_tag_ms_config()
 
@@ -100,10 +100,10 @@ class Deploy:
         set_yq(f"{self.ns}/{self.release_name}/values.yaml", "AwsAccountId", get_aws_account_id())
         add_and_push_with_tag(f"Deploy {self.release_name} {self.ns}", self.tag_name)
         chdir(old_path)
-        alert(f"# Repositorio App Config configurado")
+        alert(f"# Repositorio App Config configurado", "green")
 
     def delete_argocd_config(self):
-        alert(f"\n# Iniciando configuracao do ArgoCD Repo")
+        alert(f"\n# Iniciando configuracao do ArgoCD Repo", "green")
         old_path = pwd()
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
         chdir(f"{path_to_values}")
@@ -119,10 +119,10 @@ class Deploy:
         add_and_push(f"UnDeploy {self.release_name} {self.ns}")
 
         chdir(old_path)
-        alert(f"# ArgoCD Repo configurado")
+        alert(f"# ArgoCD Repo configurado", "green")
 
     def add_argocd_config(self):
-        alert(f"\n# Iniciando configuracao do ArgoCD Repo")
+        alert(f"\n# Iniciando configuracao do ArgoCD Repo", "gren")
         old_path = pwd()
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
         chdir(f"{path_to_values}")
@@ -153,7 +153,7 @@ class Deploy:
 
         add_and_push(f"Deploy {self.release_name} {self.ns}")
         chdir(old_path)
-        alert(f"# ArgoCD Repo configurado")
+        alert(f"# ArgoCD Repo configurado", "green")
 
     def sync(self):
         #alert(f"\n# Iniciando ArgoCD Sync", "yellow")

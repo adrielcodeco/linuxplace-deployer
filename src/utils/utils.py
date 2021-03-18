@@ -7,15 +7,17 @@ from shutil import copyfile, rmtree
 """
 Imprime mensgens na tela em formatos coloridos
 """
-def alert(msg, color="green"):
+def alert(msg, color="white"):
 	if color == "yellow":
 		print(f"\033[93m{msg}\033[0m") #yellow
 	elif color == "magenta":
 		print(f"\033[95m{msg}\033[0m") #magenta
 	elif color == "red":
 		print(f"\033[91m\033[1m{msg}\033[0m") #red and bold
-	else: # green
-		print(f"\033[92m{msg}\033[0m") #green
+	elif color == "green":
+		print(f"\033[95m\033[1m{msg}\033[0m") #green and bold
+	else: # white
+		print(f"\033[92m{msg}\037[0m") #green
 
 """
 Executa comandos de sistemas
