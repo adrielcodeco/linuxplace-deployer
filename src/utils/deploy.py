@@ -142,14 +142,14 @@ class Deploy:
             set_yq("values.yaml", f"applications[+].name", f"{self.release_name}-{self.ns}")
 
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).namespace' '{self.ns}'"
-        set_yq("values.yaml", f"applications.(name=={self.release_name}).namespace", f"{self.ns}")
+        set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).namespace", f"{self.ns}")
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.targetRevision' 'HEAD'"
-        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.targetRevision", f"{self.tag_name}")
+        set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).source.targetRevision", f"{self.tag_name}")
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.path' 'ms-chart'"
-        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.path", f"ms-chart")
+        set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).source.path", f"ms-chart")
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL'
         # 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
-        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.repoURL",
+        set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).source.repoURL",
                f"git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git")
 
         add_and_push(f"Deploy {self.release_name} {self.ns}")
