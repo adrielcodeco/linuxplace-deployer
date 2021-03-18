@@ -15,9 +15,9 @@ def alert(msg, color="white"):
 	elif color == "red":
 		print(f"\033[91m\033[1m{msg}\033[0m") #red and bold
 	elif color == "green":
-		print(f"\033[95m\033[1m{msg}\033[0m") #green and bold
+		print(f"\033[92m\033[1m{msg}\033[0m") #green and bold
 	else: # white
-		print(f"\033[92m{msg}\037[0m") #green
+		print(f"\033[37m{msg}\033[0m") #green
 
 """
 Executa comandos de sistemas
