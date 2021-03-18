@@ -49,7 +49,6 @@ def init(argocd_repo, apps_repo, ns, need_api_configs=True):
         # removendo o nome do projeto
         base_url = ssh_url + CI_PROJECT_PATH[:-len(CI_PROJECT_NAME)]
         print (base_url)
-        exit(23)
         fetch_repo(f"{base_url}api-configs.git", LOCAL_PATH_MS_CONFIG)
 
     fetch_repo(apps_repo,   LOCAL_PATH_APPS)
