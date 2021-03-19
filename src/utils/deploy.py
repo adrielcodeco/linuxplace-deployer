@@ -91,17 +91,17 @@ class Deploy:
             # Checa se existe algum deploy ja com essa tag pois pode ser uma tag de deploy antigo
             alert(f"# Deploy encontrado no historico de tags do repositorio app-config, reutilizando ({self.tag_name})", )
         else:
-            mkdir(f"{self.ns}/{self.release_name}")
+            mkdir(f"{self.ns}/{self.release_name}-{self.ns}")
             if self.ns == "dev":
-                copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
+                copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}-{self.ns}/values.yaml")
             else:
                 alert(f"# Deploy nao encontrado no historico de tags do repositorio app-config, criando uma tag nova ({self.tag_name})")
                 alert(f"# Copiando values.yaml do {LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml")
                 copia_e_cola(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml",
-                             f"{self.ns}/{self.release_name}/values.yaml")
+                             f"{self.ns}/{self.release_name}-{self.ns}/values.yaml")
 
             # adiciona o account id no values
-            set_yq(f"{self.ns}/{self.release_name}/values.yaml", "AwsAccountId", get_aws_account_id())
+            set_yq(f"{self.ns}/{self.release_name}-{self.ns}/values.yaml", "AwsAccountId", get_aws_account_id())
             add_and_push_with_tag(f"Deploy {self.release_name} {self.ns}", self.tag_name)
         chdir(old_path)
         alert(f"# Repositorio App Config configurado", "green")
