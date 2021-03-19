@@ -162,8 +162,10 @@ class Deploy:
     def sync(self):
         alert(f"\n# Iniciando ArgoCD Sync", "yellow")
         general_flags = f"--insecure --server {self.ARGOCD_SERVER} --auth-token {self.ARGOCD_AUTH_TOKEN}"
+        alert("# Executando ArgoCD Sync")
         command(f"argocd app sync {self.ns}-apps --prune {general_flags}")
-        command(f"argocd app sync {self.release_name}-{self.ns} --timeout {DEPLOY_TIMEOUT} {general_flags}")
+        alert("# Executando ArgoCD Wait Complete")
+        command(f"argocd app wait {self.release_name}-{self.ns} --timeout {DEPLOY_TIMEOUT} {general_flags}")
         alert(f"# Para verificar o status, faca login no U4CRYPTO-SHARED-CLUSTER, execute o comando abaixo para verificar "
               f"o status do Deploy, e depois abra no seu navegador o endereco https://localhost:8080/", "yellow")
         alert(f"$ kubectl port-forward svc/argocd-server -n argocd 8080:443", "yellow")
