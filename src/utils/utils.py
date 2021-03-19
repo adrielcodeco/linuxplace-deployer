@@ -33,9 +33,8 @@ def command(command, output=PIPE, sensitive=False):
 			if run.returncode == 0:
 				return True, out[:-1].decode("utf-8")
 			else:
-				alert(f"# O comando {cmd} retornou {out} com o erro {err}", "red")
-				exit(1)
-				#return False, err[:-1].decode("utf-8")
+				alert(f"# O comando '{cmd}' retornou o erro {err}", "red")
+				return False, err[:-1].decode("utf-8")
 		else:
 			with open(output, "a") as standard_out:
 				run = Popen(shlex.split(cmd), stderr=PIPE, stdout=standard_out)
