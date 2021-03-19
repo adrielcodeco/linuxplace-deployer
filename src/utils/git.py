@@ -56,6 +56,9 @@ def git_checkout(target):
 
 def git_push(branch="master"):
 	arg = f"--tags"
+	# certifica que ta atualizado
+	command(f"git pull origin {branch}")
+	# commita
 	command(f"git push origin {branch} {arg}")
 
 def add_and_push(msg, branch="master"):
