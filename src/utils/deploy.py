@@ -59,7 +59,10 @@ class Deploy:
 
         rmdir(f"{self.ns}/{self.release_name}")
 
-        add_and_push(f"UnDeploy {self.release_name} {self.ns}")
+        ok, ret = add_and_push(f"UnDeploy {self.release_name} {self.ns}")
+        if not ok:
+            alert(f"# Erro ao executar push")
+            exit(1)
         chdir(old_path)
         alert(f"# Repositorio App Config configurado")
 
@@ -71,7 +74,10 @@ class Deploy:
         if there_is_tag:
             git_checkout(self.tag_name)
         else:
-            tag_and_push(f"Deploy {self.release_name} {self.ns}", self.tag_name)
+            ok, ret = tag_and_push(f"Deploy {self.release_name} {self.ns}", self.tag_name)
+            if not ok:
+                alert(f"# Erro ao executar push")
+                exit(1)
 
         chdir(old_path)
 
@@ -102,7 +108,10 @@ class Deploy:
 
             # adiciona o account id no values
             set_yq(f"{self.ns}/{self.release_name}-{self.ns}/values.yaml", "AwsAccountId", get_aws_account_id())
-            add_and_push_with_tag(f"Deploy {self.release_name} {self.ns}", self.tag_name)
+            ok, ret = add_and_push_with_tag(f"Deploy {self.release_name} {self.ns}", self.tag_name)
+            if not ok:
+                alert(f"# Erro ao executar push")
+                exit(1)
         chdir(old_path)
         alert(f"# Repositorio App Config configurado", "green")
 
@@ -120,7 +129,10 @@ class Deploy:
             # https://github.com/mikefarah/yq/issues/493
 
         self.verify_empty_applications_map("values.yaml")
-        add_and_push(f"UnDeploy {self.release_name} {self.ns}")
+        ok, ret = add_and_push(f"UnDeploy {self.release_name} {self.ns}")
+        if not ok:
+            alert(f"# Erro ao executar push")
+            exit(1)
 
         chdir(old_path)
         alert(f"# ArgoCD Repo configurado", "green")
@@ -155,7 +167,10 @@ class Deploy:
         set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).source.repoURL",
                f"git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git")
 
-        add_and_push(f"Deploy {self.release_name} {self.ns}")
+        ok, ret = add_and_push(f"Deploy {self.release_name} {self.ns}")
+        if not ok:
+            alert(f"# Erro ao executar push")
+            exit(1)
         chdir(old_path)
         alert(f"# ArgoCD Repo configurado", "green")
 

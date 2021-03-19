@@ -59,17 +59,22 @@ def git_push(branch="master"):
 	# certifica que ta atualizado
 	command(f"git pull origin {branch}")
 	# commita
-	command(f"git push origin {branch} {arg}")
+	return command(f"git push origin {branch} {arg}")
 
 def add_and_push(msg, branch="master"):
 	if there_is_modification():
 		alert("# Repositorio com atualizacoes", "yellow")
 		git_add_all()
 		git_commit(msg)
-		git_push(branch=branch)
-		alert(f"# Commit e Push feitos para origin {branch}", "yellow")
+		ok, ret = git_push(branch=branch)
+		if ok:
+			alert(f"# Commit e Push feitos para origin {branch}", "yellow")
+		else:
+			alert(f"# Erro ao fazer commit e push", "red")
+		return ok, ret
 	else:
 		alert("# Nao existe modificacoes e por isso nao exige acoes nesse repositorio", "yellow")
+		return True, None
 
 
 def add_and_push_with_tag(msg, tag, branch="master"):
@@ -78,12 +83,23 @@ def add_and_push_with_tag(msg, tag, branch="master"):
 		git_add_all()
 		git_commit(msg)
 		git_tag(tag)
-		git_push(branch=branch)
-		alert(f"# Commit, Tag e Push feitos para origin {branch}", "yellow")
+		ok, ret = git_push(branch=branch)
+		if ok:
+			alert(f"# Commit, Tag e Push feitos para origin {branch}", "yellow")
+		else:
+			alert(f"# Erro ao fazer commit, tag e push", "red")
+		return ok, ret
 	else:
 		alert("# Nao existe modificacoes e por isso nao exige acoes nesse repositorio", "yellow")
+		return True, None
 
 def tag_and_push(msg, tag_name, branch="master"):
 	git_tag(tag_name)
-	git_push(branch=branch)
-	alert(f"# Tag e Push feitos para origin {branch}", "yellow")
+	ok, ret = git_push(branch=branch)
+	if ok:
+		alert(f"# Tag e Push feitos para origin {branch}", "yellow")
+	else:
+		alert(f"# Erro ao fazer tag e push", "red")
+	return ok, ret
+
+
