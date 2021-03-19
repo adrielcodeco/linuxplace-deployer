@@ -33,7 +33,7 @@ def command(command, output=PIPE, sensitive=False):
 			if run.returncode == 0:
 				return True, out[:-1].decode("utf-8")
 			else:
-				alert(f"# Falha ao executar comando {cmd}, erro: {err}", "red")
+				alert(f"# O comando {cmd} retornou {out} com o erro {err}", "red")
 				exit(1)
 				#return False, err[:-1].decode("utf-8")
 		else:
