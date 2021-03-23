@@ -97,17 +97,17 @@ class Deploy:
             # Checa se existe algum deploy ja com essa tag pois pode ser uma tag de deploy antigo
             alert(f"# Deploy encontrado no historico de tags do repositorio app-config, reutilizando ({self.tag_name})", )
         else:
-            mkdir(f"{self.ns}/{self.release_name}-{self.ns}")
+            mkdir(f"{self.ns}/{self.release_name}")
             if self.ns == "dev":
-                copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}-{self.ns}/values.yaml")
+                copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
             else:
                 alert(f"# Deploy nao encontrado no historico de tags do repositorio app-config, criando uma tag nova ({self.tag_name})")
                 alert(f"# Copiando values.yaml do {LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml")
                 copia_e_cola(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml",
-                             f"{self.ns}/{self.release_name}-{self.ns}/values.yaml")
+                             f"{self.ns}/{self.release_name}/values.yaml")
 
             # adiciona o account id no values
-            set_yq(f"{self.ns}/{self.release_name}-{self.ns}/values.yaml", "AwsAccountId", get_aws_account_id())
+            set_yq(f"{self.ns}/{self.release_name}/values.yaml", "AwsAccountId", get_aws_account_id())
             ok, ret = add_and_push_with_tag(f"Deploy {self.release_name} {self.ns}", self.tag_name)
             if not ok:
                 alert(f"# Erro ao executar push")
@@ -121,11 +121,11 @@ class Deploy:
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
         chdir(f"{path_to_values}")
         # verifica se existe ja
-        there_is_deploy = get_yq(f"values.yaml", f"'applications.(name=={self.release_name}-{self.ns}).name'")
+        there_is_deploy = get_yq(f"values.yaml", f"'applications.(name=={self.release_name}).name'")
 
         if there_is_deploy:
             #cmd = f"yq d -i values.yaml 'applications.(name=={self.release_name}).name'"
-            delete_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns})")
+            delete_yq("values.yaml", f"applications.(name=={self.release_name})")
             # https://github.com/mikefarah/yq/issues/493
 
         self.verify_empty_applications_map("values.yaml")
@@ -143,28 +143,28 @@ class Deploy:
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
         chdir(f"{path_to_values}")
         # verifica se existe ja
-        there_is_deploy = get_yq(f"values.yaml", f"'applications.(name=={self.release_name}-{self.ns}).name'")
+        there_is_deploy = get_yq(f"values.yaml", f"'applications.(name=={self.release_name}).name'")
 
         if there_is_deploy:
             # se sim so reescreve sobre o mapa
             # yq w -i values.yaml 'applications.(name==v1-api-u4c-YYY-master).name' 'v1-api-u4c-XXXYYY-master'
             #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).name' '{self.release_name}'"
-            set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).name", f"{self.release_name}-{self.ns}")
+            set_yq("values.yaml", f"applications.(name=={self.release_name}).name", f"{self.release_name}")
         else:
             # caso contrario cria um novo
             # yq w -i values.yaml 'applications[+].name' 'v1-api-u4c-rodolfo-master'
             #cmd = f"yq w -i values.yaml 'applications[+].name' '{self.release_name}'"
-            set_yq("values.yaml", f"applications[+].name", f"{self.release_name}-{self.ns}")
+            set_yq("values.yaml", f"applications[+].name", f"{self.release_name}")
 
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).namespace' '{self.ns}'"
-        set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).namespace", f"{self.ns}")
+        set_yq("values.yaml", f"applications.(name=={self.release_name}).namespace", f"{self.ns}")
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.targetRevision' 'HEAD'"
-        set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).source.targetRevision", f"{self.tag_name}")
+        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.targetRevision", f"{self.tag_name}")
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.path' 'ms-chart'"
-        set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).source.path", f"ms-chart")
+        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.path", f"ms-chart")
         #cmd = f"yq w -i values.yaml 'applications.(name=={self.release_name}).source.repoURL'
         # 'git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git'"
-        set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).source.repoURL",
+        set_yq("values.yaml", f"applications.(name=={self.release_name}).source.repoURL",
                f"git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git")
 
         ok, ret = add_and_push(f"Deploy {self.release_name} {self.ns}")
@@ -180,7 +180,7 @@ class Deploy:
         alert("# Executando ArgoCD Sync")
         command(f"argocd app sync {self.ns}-apps --prune {general_flags}")
         #alert("# Executando ArgoCD Wait Complete")
-        #ok, ret = command(f"argocd app wait {self.release_name}-{self.ns} --timeout {DEPLOY_TIMEOUT} {general_flags}")
+        #ok, ret = command(f"argocd app wait {self.release_name} --timeout {DEPLOY_TIMEOUT} {general_flags}")
         alert(f"# Para verificar o status, faca login no U4CRYPTO-SHARED-CLUSTER, execute o comando abaixo para verificar "
               f"o status do Deploy, e depois abra no seu navegador o endereco https://localhost:8080/", "yellow")
         alert(f"$ kubectl port-forward svc/argocd-server -n argocd 8080:443", "yellow")
