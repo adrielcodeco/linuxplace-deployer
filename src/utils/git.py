@@ -5,9 +5,6 @@ def init_git():
 	save_into_file("/root/.gitconfig", info)
 	# command("git config --global user.email \"suporte@linuxplace.com.br\"; git config --global user.name \"LxP Deployer\"")
 
-def git_pull(branch="master"):
-	command(f"git pull origin {branch}")
-
 def fetch_repo(repo, path, branch="master"):
 	alert(f"# Clonando repo {repo} em {path}", "yellow")
 	if there_is_dir(path):
@@ -51,19 +48,22 @@ def git_commit(msg):
 def git_tag(name):
 	command(f"git tag '{name}'")
 
+def git_pull(branch="master"):
+	command(f"git pull origin {branch}")
+	alert(f"# git pull origin {branch} realizado", "yellow")
+
 def git_checkout(target):
 	command(f"git checkout {target}")
 
 def git_push(branch="master"):
 	arg = f"--tags"
-	# certifica que ta atualizado
-	command(f"git pull origin {branch}")
 	# commita
 	return command(f"git push origin {branch} {arg}")
 
 def add_and_push(msg, branch="master"):
 	if there_is_modification():
 		alert("# Repositorio com atualizacoes", "yellow")
+		git_pull(branch=branch)
 		git_add_all()
 		git_commit(msg)
 		ok, ret = git_push(branch=branch)
@@ -80,6 +80,7 @@ def add_and_push(msg, branch="master"):
 def add_and_push_with_tag(msg, tag, branch="master"):
 	if there_is_modification():
 		alert("# Repositorio com atualizacoes", "yellow")
+		git_pull(branch=branch)
 		git_add_all()
 		git_commit(msg)
 		git_tag(tag)
@@ -94,6 +95,7 @@ def add_and_push_with_tag(msg, tag, branch="master"):
 		return True, None
 
 def tag_and_push(msg, tag_name, branch="master"):
+	git_pull(branch=branch)
 	git_tag(tag_name)
 	ok, ret = git_push(branch=branch)
 	if ok:
