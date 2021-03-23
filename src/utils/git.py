@@ -48,8 +48,8 @@ def git_commit(msg):
 def git_tag(name):
 	command(f"git tag '{name}'")
 
-def git_pull(branch="master"):
-	command(f"git pull origin {branch}")
+def git_pull(args, branch="master"):
+	command(f"git pull origin {branch} {args}")
 	alert(f"# git pull origin {branch} realizado", "yellow")
 
 def git_checkout(target):
@@ -63,7 +63,7 @@ def git_push(branch="master"):
 def add_and_push(msg, branch="master"):
 	if there_is_modification():
 		alert("# Repositorio com atualizacoes", "yellow")
-		git_pull(branch=branch)
+		git_pull("--no-ff", branch=branch)
 		git_add_all()
 		git_commit(msg)
 		ok, ret = git_push(branch=branch)
@@ -80,7 +80,7 @@ def add_and_push(msg, branch="master"):
 def add_and_push_with_tag(msg, tag, branch="master"):
 	if there_is_modification():
 		alert("# Repositorio com atualizacoes", "yellow")
-		git_pull(branch=branch)
+		git_pull("--no-ff", branch=branch)
 		git_add_all()
 		git_commit(msg)
 		git_tag(tag)
@@ -95,7 +95,7 @@ def add_and_push_with_tag(msg, tag, branch="master"):
 		return True, None
 
 def tag_and_push(msg, tag_name, branch="master"):
-	git_pull(branch=branch)
+	git_pull("--no-ff", branch=branch)
 	git_tag(tag_name)
 	ok, ret = git_push(branch=branch)
 	if ok:
