@@ -63,7 +63,8 @@ class Deploy:
 
         rmdir(f"{self.ns}/{self.release_name}")
 
-        ok, ret = add_and_push(f"UnDeploy {self.release_name} {self.ns}")
+        add_and_commit(f"UnDeploy {self.release_name} {self.ns}")
+        ok, ret = push(rebase=True)
         if not ok:
             alert(f"# Erro ao executar push")
             exit(1)
@@ -78,7 +79,8 @@ class Deploy:
         if there_is_tag:
             git_checkout(self.tag_name)
         else:
-            ok, ret = tag_and_push(f"Deploy {self.release_name} {self.ns}", self.tag_name)
+            tag(self.tag_name)
+            ok, out = push(f"Deploy {self.release_name} {self.ns}")
             if not ok:
                 alert(f"# Erro ao executar push")
                 exit(1)
@@ -120,7 +122,9 @@ class Deploy:
             # adiciona o account id no values
             set_yq(f"{self.ns}/{self.release_name}/values.yaml", "AwsAccountId", get_aws_account_id())
             self.set_cd_vars(f"{self.ns}/{self.release_name}/values.yaml")
-            ok, ret = add_and_push_with_tag(f"Deploy {self.release_name} {self.ns}", self.tag_name)
+            add_and_commit(f"Deploy {self.release_name} {self.ns}")
+            tag(self.tag_name)
+            ok, ret = push(rebase=True)
             if not ok:
                 alert(f"# Erro ao executar push")
                 exit(1)
@@ -140,7 +144,8 @@ class Deploy:
             # https://github.com/mikefarah/yq/issues/493
 
         self.verify_empty_applications_map("values.yaml")
-        ok, ret = add_and_push(f"UnDeploy {self.release_name} {self.ns}")
+        add_and_commit(f"UnDeploy {self.release_name} {self.ns}")
+        ok, ret = push(rebase=True)
         if not ok:
             alert(f"# Erro ao executar push")
             exit(1)
@@ -170,7 +175,8 @@ class Deploy:
         set_yq("values.yaml", f"applications.(name=={self.release_name}-{self.ns}).source.repoURL",
                f"git@gitlab.com:u4crypto/devops/aplicacoes/app-configs.git")
 
-        ok, ret = add_and_push(f"Deploy {self.release_name} {self.ns}")
+        add_and_commit(f"Deploy {self.release_name} {self.ns}")
+        ok, ret = push(rebase=True)
         if not ok:
             alert(f"# Erro ao executar push")
             exit(1)

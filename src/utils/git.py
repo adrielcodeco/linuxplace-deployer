@@ -1,4 +1,6 @@
 from utils.utils import *
+from random import randint
+from time import sleep
 
 def init_git():
 	info = f"[user]\n\tname = LxP Deployer\n\temail = suporte@linuxplace.com.br"
@@ -39,68 +41,44 @@ def there_is_this_tag(tag_name):
 		alert(f"# Tag {tag_name} nao existe", "yellow")
 		return False
 
-def git_add_all():
-	command(f"git add -A")
+def __git_add(args):
+	return command(f"git add {args}")
 
-def git_commit(msg):
-	command(f"git commit -m '{msg}'")
+def __git_commit(msg):
+	return command(f"git commit -m '{msg}'")
 
-def git_tag(name):
-	command(f"git tag '{name}'")
+def __git_tag(name):
+	return command(f"git tag '{name}'")
 
-def git_pull(args, branch="master"):
-	command(f"git pull origin {branch} {args}")
-	alert(f"# git pull origin {branch} realizado", "yellow")
+def __git_pull(args, branch="master"):
+	alert(f"# git pull origin {branch} realizando", "yellow")
+	return command(f"git pull origin {branch} {args}")
 
-def git_checkout(target):
-	command(f"git checkout {target}")
-
-def git_push(branch="master"):
+def __git_push(branch="master"):
 	arg = f"--tags"
 	return command(f"git push origin {branch} {arg}")
 
-def add_and_push(msg, branch="master"):
+def git_checkout(target):
+	return command(f"git checkout {target}")
+
+
+def add_and_commit(msg):
 	if there_is_modification():
 		alert("# Repositorio com atualizacoes", "yellow")
-		git_pull("--rebase", branch=branch)
-		git_add_all()
-		git_commit(msg)
-		ok, ret = git_push(branch=branch)
-		if ok:
-			alert(f"# Commit e Push feitos para origin {branch}", "yellow")
-		else:
-			alert(f"# Erro ao fazer commit e push", "red")
-		return ok, ret
+		__git_add("-A")
+		__git_commit(msg)
 	else:
-		alert("# Nao existe modificacoes e por isso nao exige acoes nesse repositorio", "yellow")
-		return True, None
+		alert("# Repositorio sem atualizacoes", "yellow")
 
+def tag(tag_name):
+	__git_tag(tag_name)
 
-def add_and_push_with_tag(msg, tag, branch="master"):
-	if there_is_modification():
-		alert("# Repositorio com atualizacoes", "yellow")
-		git_pull("--rebase", branch=branch)
-		git_add_all()
-		git_commit(msg)
-		git_tag(tag)
-		ok, ret = git_push(branch=branch)
-		if ok:
-			alert(f"# Commit, Tag e Push feitos para origin {branch}", "yellow")
-		else:
-			alert(f"# Erro ao fazer commit, tag e push", "red")
-		return ok, ret
-	else:
-		alert("# Nao existe modificacoes e por isso nao exige acoes nesse repositorio", "yellow")
-		return True, None
+def pull(rebase=False, branch="master"):
+	if rebase == True:
+		args = "--rebase"
+	return __git_pull(args, branch)
 
-def tag_and_push(msg, tag_name, branch="master"):
-	git_pull("--rebase", branch=branch)
-	git_tag(tag_name)
-	ok, ret = git_push(branch=branch)
-	if ok:
-		alert(f"# Tag e Push feitos para origin {branch}", "yellow")
-	else:
-		alert(f"# Erro ao fazer tag e push", "red")
-	return ok, ret
-
-
+def push(rebase=False, branch="master"):
+	if rebase:
+		pull(rebase=True)
+	return __git_push(branch)
