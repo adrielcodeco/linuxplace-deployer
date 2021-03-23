@@ -57,13 +57,12 @@ def git_checkout(target):
 
 def git_push(branch="master"):
 	arg = f"--tags"
-	# commita
 	return command(f"git push origin {branch} {arg}")
 
 def add_and_push(msg, branch="master"):
 	if there_is_modification():
 		alert("# Repositorio com atualizacoes", "yellow")
-		git_pull("--no-ff", branch=branch)
+		git_pull("--rebase", branch=branch)
 		git_add_all()
 		git_commit(msg)
 		ok, ret = git_push(branch=branch)
@@ -80,7 +79,7 @@ def add_and_push(msg, branch="master"):
 def add_and_push_with_tag(msg, tag, branch="master"):
 	if there_is_modification():
 		alert("# Repositorio com atualizacoes", "yellow")
-		git_pull("--no-ff", branch=branch)
+		git_pull("--rebase", branch=branch)
 		git_add_all()
 		git_commit(msg)
 		git_tag(tag)
@@ -95,7 +94,7 @@ def add_and_push_with_tag(msg, tag, branch="master"):
 		return True, None
 
 def tag_and_push(msg, tag_name, branch="master"):
-	git_pull("--no-ff", branch=branch)
+	git_pull("--rebase", branch=branch)
 	git_tag(tag_name)
 	ok, ret = git_push(branch=branch)
 	if ok:
