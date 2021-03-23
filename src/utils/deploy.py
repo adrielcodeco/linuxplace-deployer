@@ -24,7 +24,6 @@ class Deploy:
 
     def __init__(self, release_suffix, app_properties, ns):
         alert(f"\n# Instanciando o Deploy", "green")
-        self.release_name = self.set_release_name(release_suffix, app_properties)
         self.ns = ns
         self.basename = get_yq(app_properties, "basename")
         self.api_version = get_yq(app_properties, "apiVersion")
@@ -32,12 +31,13 @@ class Deploy:
         self.CI_COMMIT_SHORT_SHA = get_env_var("CI_COMMIT_SHORT_SHA")
         self.ARGOCD_AUTH_TOKEN = get_env_var("ARGOCD_AUTH_TOKEN_"+self.ns.upper())
         self.tag_name = self.create_app_config_tag_name()
+        self.release_name = self.set_release_name(release_suffix)
 
         alert(f"# Microsservico: {self.release_name} no ambiente {self.ns}")
         alert(f"# Tag name: {self.tag_name}")
         alert(f"# Instancia construida", "green")
 
-    def set_release_name(self, release_suffix, app_properties):
+    def set_release_name(self, release_suffix):
         api_version = self.api_version
         app_name = self.basename
         if not release_suffix:
