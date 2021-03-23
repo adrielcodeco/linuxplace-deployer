@@ -149,7 +149,7 @@ class Deploy:
         alert(f"# ArgoCD Repo configurado", "green")
 
     def add_argocd_config(self):
-        alert(f"\n# Iniciando configuracao do ArgoCD Repo", "gren")
+        alert(f"\n# Iniciando configuracao do ArgoCD Repo", "green")
         old_path = pwd()
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
         chdir(f"{path_to_values}")
