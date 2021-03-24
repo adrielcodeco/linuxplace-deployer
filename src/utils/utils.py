@@ -18,22 +18,22 @@ def alert(msg, color="white", breakline_before=False):
 	BRANCO   = "\033[37m"
 	global DEBUG
 
-	PREFIX = ""
-	#if breakline_before or color == "red":
-	PREFIX = "\n"
-	PREFIX = PREFIX + "|- "
+	PRE_BREAKLINE = ""
+	PREFIX = "# "
+	if breakline_before or color == "red":
+		PRE_BREAKLINE = "\n"
 
 
 	if color == "yellow" and DEBUG >= 1:
-		print(f"{AMARELO}{PREFIX}DEBUG {msg}{DEFAULT}") #yellow
+		print(f"{PRE_BREAKLINE}{AMARELO}{PREFIX}DEBUG {msg}{DEFAULT}") #yellow
 	elif color == "magenta":
-		print(f"{MAGENTA}{PREFIX}{msg}{DEFAULT}") #magenta
+		print(f"{PRE_BREAKLINE}{MAGENTA}{PREFIX}{msg}{DEFAULT}") #magenta
 	elif color == "red":
-		print(f"{VERMELHO}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #red and bold
+		print(f"{PRE_BREAKLINE}{VERMELHO}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #red and bold
 	elif color == "green":
-		print(f"{VERDE}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #green and bold
+		print(f"{PRE_BREAKLINE}{VERDE}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #green and bold
 	else: # white
-		print(f"{BRANCO}{PREFIX}{msg}{DEFAULT}")
+		print(f"{PRE_BREAKLINE}{BRANCO}{PREFIX}{msg}{DEFAULT}")
 
 """
 Executa comandos de sistemas
