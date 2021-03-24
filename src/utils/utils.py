@@ -3,6 +3,7 @@ import os, sys, getopt, shlex, re
 from subprocess import PIPE, Popen
 import json, boto3
 from shutil import copyfile, rmtree
+from utils.constants import *
 
 """
 Imprime mensgens na tela em formatos coloridos
@@ -16,7 +17,7 @@ def alert(msg, color="white", breakline_before=False):
 	VERDE    = "\033[92m"
 	BRANCO   = "\033[37m"
 	global DEBUG
-	
+
 	PREFIX = ""
 	if breakline_before or color == "red":
 		PREFIX = "\n"

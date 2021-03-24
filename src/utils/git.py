@@ -1,6 +1,7 @@
 from utils.utils import *
 from random import randint
 from time import sleep
+from utils.constants import *
 
 def init_git():
 	info = f"[user]\n\tname = LxP Deployer\n\temail = suporte@linuxplace.com.br"
