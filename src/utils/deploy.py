@@ -23,7 +23,7 @@ class Deploy:
         return tag_name
 
     def __init__(self, release_suffix, app_properties, ns):
-        alert(f"\n# Instanciando o Deploy", "green")
+        alert(f"Instanciando o Deploy", breakline_before=True)
         self.ns = ns
         self.basename =    get_yq(app_properties, "basename")
         self.api_version = get_yq(app_properties, "apiVersion")
@@ -35,7 +35,7 @@ class Deploy:
 
         alert(f"Microsservico: {self.release_name} no ambiente {self.ns}")
         alert(f"Tag name: {self.tag_name}")
-        alert(f"Instancia construida", "green")
+        alert(f"Instancia construida")
 
     def set_release_name(self, release_suffix):
         api_version = self.api_version
@@ -57,7 +57,7 @@ class Deploy:
             alert(f"Mapa .applications removido", "yellow")
 
     def delete_app_config(self):
-        alert(f"\n# Iniciando configuracao do App Config Repo")
+        alert(f"Iniciando configuracao do App Config Repo", breakline_before=True)
         old_path = pwd()
         chdir(f"{LOCAL_PATH_APPS}")
 
@@ -95,13 +95,13 @@ class Deploy:
         set_yq(file, "app.cd.group", self.group)
 
     def create_app_config(self):
-        alert(f"\n# Iniciando configuracao do App Config Repo", "green")
+        alert(f"Iniciando configuracao do App Config Repo", breakline_before=True)
         # Checa se ja existe tag no repo api_configs
         if self.ns != "dev":
-            alert("Checando tag no repositorio api_configs")
+            alert("Checando tag no repositorio api_configs", "yellow")
             self.there_is_tag_ms_config()
         else:
-            alert("Ambiente dev nao utiliza repositorio api_configs, pulando checagem de tag")
+            alert("Ambiente dev nao utiliza repositorio api_configs, pulando checagem de tag", "yellow")
         old_path = pwd()
         chdir(f"{LOCAL_PATH_APPS}")
 
@@ -129,10 +129,10 @@ class Deploy:
                 alert(f"Erro ao executar push")
                 exit(1)
         chdir(old_path)
-        alert(f"Repositorio App Config configurado", "green")
+        alert(f"Repositorio App Config configurado")
 
     def delete_argocd_config(self):
-        alert(f"\n# Iniciando configuracao do ArgoCD Repo", "green")
+        alert(f"Iniciando configuracao do ArgoCD Repo", breakline_before=True)
         old_path = pwd()
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
         chdir(f"{path_to_values}")
@@ -151,10 +151,10 @@ class Deploy:
             exit(1)
 
         chdir(old_path)
-        alert(f"ArgoCD Repo configurado", "green")
+        alert(f"ArgoCD Repo configurado")
 
     def add_argocd_config(self):
-        alert(f"\n# Iniciando configuracao do ArgoCD Repo", "green")
+        alert(f"Iniciando configuracao do ArgoCD Repo", breakline_before=True)
         old_path = pwd()
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
         chdir(f"{path_to_values}")
@@ -181,12 +181,12 @@ class Deploy:
             alert(f"Erro ao executar push")
             exit(1)
         chdir(old_path)
-        alert(f"ArgoCD Repo configurado", "green")
+        alert(f"ArgoCD Repo configurado")
 
     def sync(self):
-        alert(f"\n# Iniciando ArgoCD Sync", "yellow")
+        alert(f"Iniciando ArgoCD Sync", breakline_before=True)
         general_flags = f"--insecure --server {self.ARGOCD_SERVER} --auth-token {self.ARGOCD_AUTH_TOKEN}"
-        alert("Executando ArgoCD Sync")
+        alert("Executando ArgoCD Sync", "yellow")
         command(f"argocd app sync {self.ns}-apps --prune {general_flags}")
         alert(f"Para verificar o status, faca login no U4CRYPTO-SHARED-CLUSTER, execute o comando abaixo para verificar "
               f"o status do Deploy, e depois abra no seu navegador o endereco https://localhost:8080/", "yellow")
