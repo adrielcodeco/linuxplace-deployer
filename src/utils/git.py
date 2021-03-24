@@ -78,7 +78,15 @@ def pull(rebase=False, branch="master"):
 		args = "--rebase"
 	return __git_pull(args, branch)
 
-def push(rebase=False, branch="master"):
-	if rebase:
-		pull(rebase=True)
-	return __git_push(branch)
+def push(rebase=False, retry=True, branch="master"):
+	tries = 3
+	ok = False
+	while tries > 1 and not ok:
+		if rebase:
+			pull(rebase=True)
+		ok, ret = __git_push(branch)
+		if not ok:
+			alert(f"# Tentando push novamente")
+			sleep(randint(1, 6))
+			tries = tries - 1
+	return ok, ret
