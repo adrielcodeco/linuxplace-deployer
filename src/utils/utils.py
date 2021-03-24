@@ -15,7 +15,8 @@ def alert(msg, color="white", breakline_before=False):
 	VERMELHO = "\033[91m"
 	VERDE    = "\033[92m"
 	BRANCO   = "\033[37m"
-
+	global DEBUG
+	
 	PREFIX = ""
 	if breakline_before or color == "red":
 		PREFIX = "\n"
