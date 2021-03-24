@@ -34,7 +34,7 @@ def configura_ssh_e_git():
     command(cmd)
 
     init_git()
-    alert("\n#SSH e git configurado")
+    alert("SSH e git configurado")
 
 def init(argocd_repo, apps_repo, ns, need_api_configs=True):
     configura_ssh_e_git()
@@ -105,6 +105,11 @@ def main(argv):
         else: 
             alert ("Parametro incorreto", "red")
             help()
+
+    #TODO remover
+    DEPLOY = 0
+
+    alert("TESTE", "red")
 
     if not (apps_repo and argocd_repo and app_properties and ns):
         help()
