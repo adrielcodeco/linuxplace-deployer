@@ -1,4 +1,3 @@
-
 import os, sys, getopt, shlex, re
 from subprocess import PIPE, Popen
 import json, boto3
@@ -6,7 +5,7 @@ from utils.constants import *
 from shutil import copyfile, rmtree
 
 """
-Imprime mensgens na tela em formatos coloridos
+Imprime mensgens na tela em formatos padronizados
 """
 def alert(msg, color="white"):
 	DEFAULT  = "\033[0m"
@@ -16,22 +15,26 @@ def alert(msg, color="white"):
 	VERMELHO = "\033[91m"
 	VERDE    = "\033[92m"
 	BRANCO   = "\033[37m"
-	PREFIX = "# "
+	# prefix em todos os logs
+	prefix = "# "
 	#TODO definir variavel debug por parametro
 	DEBUG = 1
+
+	# Mensagens amarelas soh serao impressas com DEBUG > 1
 	if color == "yellow" and DEBUG >= 1:
-		print(f"{AMARELO}{PREFIX}DEBUG {msg}{DEFAULT}") #yellow
+		print(f"{AMARELO}{prefix}DEBUG {msg}{DEFAULT}") #yellow
 	elif color == "magenta":
-		print(f"{MAGENTA}{PREFIX}{msg}{DEFAULT}") #magenta
+		print(f"{MAGENTA}{prefix}{msg}{DEFAULT}") #magenta
 	elif color == "red":
-		print(f"\n{VERMELHO}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #red and bold
+		print(f"\n{VERMELHO}{NEGRITO}{prefix}{msg}{DEFAULT}") #red and bold
 	elif color == "green":
-		print(f"{VERDE}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #green and bold
+		print(f"{VERDE}{NEGRITO}{prefix}{msg}{DEFAULT}") #green and bold
 	else: # white
-		print(f"{BRANCO}{PREFIX}{msg}{DEFAULT}")
+		print(f"{BRANCO}{prefix}{msg}{DEFAULT}")
 
 """
-Executa comandos de sistemas
+Executa comandos de sistemas e retorna.
+OBS: esse comando nao fara exit() caso erro.
 """
 def command(command, output=PIPE, sensitive=False):
 	cmd = command
@@ -67,65 +70,75 @@ def command(command, output=PIPE, sensitive=False):
 			exit(1)
 		raise
 
-def set_debug_level(level):
-	global DEBUG
-	DEBUG = level
-
 """
-Copy and Paste
+Copia uma arquivo de um diretorio para outro
 """
 def copia_e_cola(src, dst):
 	try:
 		copyfile(src, dst)
 	except FileNotFoundError as e:
-		alert(f"\n# Arquivos nao encontrados para copia", "red")
+		alert(f"Arquivos nao encontrados para copia", "red")
 		alert(f"{e}", "red")
 		exit(1)
 	except:
 		raise
 
 """
-Regex
+Regex sobre uma string
 """
 def get_regex(reg, str):
 	try:
 		matches = re.findall(reg, str)
 		return matches[0]
 	except IndexError:
-		alert(f"\n# Regex nao encontrou {reg} em {str}", "red")
+		alert(f"Regex nao encontrou {reg} em {str}", "red")
 	except:
 		raise
 
+"""
+Remove baseado em Regex
+"""
 def remove_regex(reg, str):
 	try:
 		matches = re.sub(reg,"", str, 1)
 		return matches
 	except IndexError:
-		alert(f"\n# Regex nao encontrou {reg} em {str}", "red")
+		alert(f"Regex nao encontrou {reg} em {str}", "red")
 	except:
 		raise
 
 """
 Manipulacao de arquivos e diretorios
 """
+"""
+Verifica se o diretorio existe
+"""
 def there_is_dir(path):
 	return os.path.exists(path)
 
-def ls(path=""):
+"""
+Executa comando ls
+"""
+def ls(path="", args=""):
 	alert(f"Executando ls {path}", "yellow")
-	null, out = command(f"ls {path}")
+	ok, out = command(f"ls {args} {path}")
 	alert(out)
 
-
+"""
+Executa comando de rm -rf
+"""
 def rmdir(path):
 	try:
 		if os.path.exists(path):
 			rmtree(path)
 			alert(f"Diretorio {path} removido", "yellow")
 	except:
-		alert(f"\n# Erro ao remover diretorio {path}", "red")
+		alert(f"Erro ao remover diretorio {path}", "red")
 		raise
 
+"""
+Executa comando de mkdir
+"""
 def mkdir(path):
 	try:
 		if not os.path.exists(path):
@@ -135,6 +148,9 @@ def mkdir(path):
 		alert(f"Erro ao criar o diretorio {path}", "red")
 		raise
 
+"""
+Salva informacao passada por parametro em arquivo
+"""
 def save_into_file(file_name, information, mode="w"):
 	try:	
 		file_pointer = open(file_name, mode)
@@ -144,42 +160,32 @@ def save_into_file(file_name, information, mode="w"):
 		alert(f"Erro ao salvar no arquivo {file_name}", "red")
 		raise
 
+"""
+Leh informacao de arquivo e retorna 
+"""
 def read_from_file(file_name):
     try:
         file_pointer = open(file_name, "r")
-
         information = file_pointer.read()
         file_pointer.close()
-
         return information
     except:
         if file_pointer == "":
-            alert(f"\n# Nao existe o arquivo {file_name} para ser lido", "red")
+            alert(f"Nao existe o arquivo {file_name} para ser lido", "red")
         raise
 
-def get_yq(path_file, key):
+"""
+Executa comando pwd
+"""
+def pwd():
 	try:
-		cmd = f"yq r {path_file} '{key}'"
-		null, out = command(cmd)
-		return out
+		return os.getcwd()
 	except:
-		alert(f"\n# Erro no get yq: {cmd}", "yellow")
 		raise
 
-def delete_yq(path_file, key):
-	cmd = f"yq d -i {path_file} '{key}'"
-	command(cmd)
-
-def set_yq(path_file, key, value, isList=False):
-	if isList:
-		cmd = f"yq w -i {path_file} '{key}[+]' '{value}'"
-	else:
-		cmd = f"yq w -i {path_file} '{key}' '{value}'"
-	command(cmd)
-
-def pwd():
-	return os.getcwd()
-
+"""
+Muda o diretorio no Runner
+"""
 def chdir(path, imprime=True):
 	try:
 		os.chdir(path)
@@ -189,6 +195,9 @@ def chdir(path, imprime=True):
 		alert(f"#Erro ao trocar para o diretorio {path}", "red")
 		raise
 
+"""
+Busca informacao da variavel de ambiente do Runner
+"""
 def get_env_var(var_name):
 	try:
 		var = os.environ[var_name]
@@ -198,6 +207,46 @@ def get_env_var(var_name):
 		alert(f"Variavel {var_name} nao recuperada", "red")
 		raise
 
+"""
+Busca informacao em um arquivo .yaml
+"""
+def get_yq(path_file, key):
+	try:
+		cmd = f"yq r {path_file} '{key}'"
+		null, out = command(cmd)
+		return out
+	except:
+		alert(f"Erro no get yq: {cmd}", "yellow")
+		raise
+
+"""
+Remove informacao de um arquivo .yaml
+"""
+def delete_yq(path_file, key):
+	try:
+		cmd = f"yq d -i {path_file} '{key}'"
+		command(cmd)
+	except:
+		alert(f"Erro no delete yq: {cmd}", "yellow")
+		raise
+
+"""
+Escreve em aquivo .yaml
+"""
+def set_yq(path_file, key, value, isList=False):
+	try:
+		if isList:
+			cmd = f"yq w -i {path_file} '{key}[+]' '{value}'"
+		else:
+			cmd = f"yq w -i {path_file} '{key}' '{value}'"
+		command(cmd)
+	except:
+		alert(f"Erro no set yq: {cmd}", "yellow")
+		raise
+
+"""
+Busca a informacao de conta AWS
+"""
 def get_aws_account_id():
 	sts = boto3.client('sts')
 	resp = sts.get_caller_identity()

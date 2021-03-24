@@ -3,10 +3,16 @@ from random import randint
 from time import sleep
 from utils.constants import *
 
+"""
+Configura o arquivo .gitconfig com informacoes de usuario ssh
+"""
 def init_git():
 	info = f"[user]\n\tname = LxP Deployer\n\temail = suporte@linuxplace.com.br"
 	save_into_file("/root/.gitconfig", info)
 
+"""
+Executa git clone
+"""
 def fetch_repo(repo, path, branch="master"):
 	alert(f"Clonando repo {repo} em {path}", "yellow")
 	if there_is_dir(path):
@@ -18,10 +24,16 @@ def fetch_repo(repo, path, branch="master"):
 		cmd = f"git clone {repo} -b {branch} {path}"
 		command(cmd)
 
+"""
+Retorna ultima tag do repositorio atual
+"""
 def get_last_tag():
 	null, out = command(f"git describe --abbrev=0 --tag")
 	return out
 
+"""
+Verifica se no repositorio atual existe alguma atualizacao de arquivo
+"""
 def there_is_modification():
 	# esse comando lista alteracoes em arquivos, caso exista retorna sim
 	null, out = command(f"git status --porcelain")
@@ -31,6 +43,9 @@ def there_is_modification():
 	else:
 		return False
 
+"""
+Verifica se nesse repositorio existe a tag especifica
+"""
 def there_is_this_tag(tag_name):
 	null, there_is = command(f"git tag -l {tag_name}")
 	alert(f"Output Git Tag: {there_is}.", "yellow")
@@ -41,27 +56,48 @@ def there_is_this_tag(tag_name):
 		alert(f"Tag {tag_name} nao existe", "yellow")
 		return False
 
+"""
+Commando interno git add
+"""
 def __git_add(args):
 	return command(f"git add {args}")
 
+"""
+Commando interno git commit
+"""
 def __git_commit(msg):
 	return command(f"git commit -m '{msg}'")
 
+"""
+Commando interno git tag
+"""
 def __git_tag(name):
 	return command(f"git tag '{name}'")
 
+"""
+Commando interno git pull
+"""
 def __git_pull(args, branch="master"):
 	alert(f"git pull origin {branch} realizando", "yellow")
 	return command(f"git pull origin {branch} {args}")
 
+"""
+Commando interno git push
+"""
 def __git_push(branch="master"):
 	arg = f"--tags"
 	return command(f"git push origin {branch} {arg}")
 
+"""
+Commando git checkout
+"""
 def git_checkout(target):
 	return command(f"git checkout {target}")
 
 
+"""
+Executa comando de add -A e commit
+"""
 def add_and_commit(msg):
 	if there_is_modification():
 		alert("Repositorio com atualizacoes", "yellow")
@@ -70,14 +106,23 @@ def add_and_commit(msg):
 	else:
 		alert("Repositorio sem atualizacoes", "yellow")
 
+"""
+Define com tag
+"""
 def tag(tag_name):
 	__git_tag(tag_name)
 
+"""
+Executa comando Pull
+"""
 def pull(rebase=False, branch="master"):
 	if rebase == True:
 		args = "--rebase"
 	return __git_pull(args, branch)
 
+"""
+Commando git Push
+"""
 def push(rebase=False, retry=True, branch="master"):
 	tries = 5
 	ok = False
