@@ -107,7 +107,7 @@ def main(argv):
             help()
 
     #TODO remover
-    DEPLOY = 0
+    DEBUG = 0
 
     if not (apps_repo and argocd_repo and app_properties and ns):
         help()
