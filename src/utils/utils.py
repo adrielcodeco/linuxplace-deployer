@@ -8,7 +8,7 @@ from utils.constants import *
 """
 Imprime mensgens na tela em formatos coloridos
 """
-def alert(msg, color="white", breakline_before=False):
+def alert(msg, color="white"):
 	DEFAULT  = "\033[0m"
 	NEGRITO  = "\033[1m"
 	AMARELO  = "\033[93m"
@@ -17,23 +17,17 @@ def alert(msg, color="white", breakline_before=False):
 	VERDE    = "\033[92m"
 	BRANCO   = "\033[37m"
 	global DEBUG
-
-	PRE_BREAKLINE = ""
 	PREFIX = "# "
-	if breakline_before or color == "red":
-		PRE_BREAKLINE = "\n"
-
-
 	if color == "yellow" and DEBUG >= 1:
-		print(f"{PRE_BREAKLINE}{AMARELO}{PREFIX}DEBUG {msg}{DEFAULT}") #yellow
+		print(f"{AMARELO}{PREFIX}DEBUG {msg}{DEFAULT}") #yellow
 	elif color == "magenta":
-		print(f"{PRE_BREAKLINE}{MAGENTA}{PREFIX}{msg}{DEFAULT}") #magenta
+		print(f"{MAGENTA}{PREFIX}{msg}{DEFAULT}") #magenta
 	elif color == "red":
-		print(f"{PRE_BREAKLINE}{VERMELHO}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #red and bold
+		print(f"\n{VERMELHO}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #red and bold
 	elif color == "green":
-		print(f"{PRE_BREAKLINE}{VERDE}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #green and bold
+		print(f"{VERDE}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #green and bold
 	else: # white
-		print(f"{PRE_BREAKLINE}{BRANCO}{PREFIX}{msg}{DEFAULT}")
+		print(f"{BRANCO}{PREFIX}{msg}{DEFAULT}")
 
 """
 Executa comandos de sistemas

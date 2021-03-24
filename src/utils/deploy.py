@@ -23,7 +23,7 @@ class Deploy:
         return tag_name
 
     def __init__(self, release_suffix, app_properties, ns):
-        alert(f"Instanciando o Deploy", breakline_before=True)
+        alert(f"Instanciando o Deploy")
         self.ns = ns
         self.basename =    get_yq(app_properties, "basename")
         self.api_version = get_yq(app_properties, "apiVersion")
@@ -57,7 +57,7 @@ class Deploy:
             alert(f"Mapa .applications removido", "yellow")
 
     def delete_app_config(self):
-        alert(f"Iniciando configuracao do App Config Repo", breakline_before=True)
+        alert(f"Iniciando configuracao do App Config Repo")
         old_path = pwd()
         chdir(f"{LOCAL_PATH_APPS}")
 
@@ -95,7 +95,7 @@ class Deploy:
         set_yq(file, "app.cd.group", self.group)
 
     def create_app_config(self):
-        alert(f"Iniciando configuracao do App Config Repo", breakline_before=True)
+        alert(f"Iniciando configuracao do App Config Repo")
         # Checa se ja existe tag no repo api_configs
         if self.ns != "dev":
             alert("Checando tag no repositorio api_configs", "yellow")
@@ -132,7 +132,7 @@ class Deploy:
         alert(f"Repositorio App Config configurado")
 
     def delete_argocd_config(self):
-        alert(f"Iniciando configuracao do ArgoCD Repo", breakline_before=True)
+        alert(f"Iniciando configuracao do ArgoCD Repo")
         old_path = pwd()
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
         chdir(f"{path_to_values}")
@@ -154,7 +154,7 @@ class Deploy:
         alert(f"ArgoCD Repo configurado")
 
     def add_argocd_config(self):
-        alert(f"Iniciando configuracao do ArgoCD Repo", breakline_before=True)
+        alert(f"Iniciando configuracao do ArgoCD Repo")
         old_path = pwd()
         path_to_values = f"{LOCAL_PATH_ARGOCD}/{self.ns}"
         chdir(f"{path_to_values}")
@@ -184,7 +184,7 @@ class Deploy:
         alert(f"ArgoCD Repo configurado")
 
     def sync(self):
-        alert(f"Iniciando ArgoCD Sync", breakline_before=True)
+        alert(f"Iniciando ArgoCD Sync")
         general_flags = f"--insecure --server {self.ARGOCD_SERVER} --auth-token {self.ARGOCD_AUTH_TOKEN}"
         alert("Executando ArgoCD Sync", "yellow")
         command(f"argocd app sync {self.ns}-apps --prune {general_flags}")

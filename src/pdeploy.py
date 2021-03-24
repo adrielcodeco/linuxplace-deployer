@@ -109,9 +109,6 @@ def main(argv):
     #TODO remover
     DEPLOY = 0
 
-    alert("TESTE", "red")
-    exit(3)
-
     if not (apps_repo and argocd_repo and app_properties and ns):
         help()
         exit(1)
