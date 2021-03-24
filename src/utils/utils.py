@@ -2,6 +2,7 @@
 import os, sys, getopt, shlex, re
 from subprocess import PIPE, Popen
 import json, boto3
+from utils.constants import *
 from shutil import copyfile, rmtree
 
 """
@@ -15,10 +16,10 @@ def alert(msg, color="white"):
 	VERMELHO = "\033[91m"
 	VERDE    = "\033[92m"
 	BRANCO   = "\033[37m"
-	global DEBUG
 	PREFIX = "# "
+	#TODO definir variavel debug por parametro
+	DEBUG = 1
 	if color == "yellow" and DEBUG >= 1:
-
 		print(f"{AMARELO}{PREFIX}DEBUG {msg}{DEFAULT}") #yellow
 	elif color == "magenta":
 		print(f"{MAGENTA}{PREFIX}{msg}{DEFAULT}") #magenta
@@ -65,6 +66,11 @@ def command(command, output=PIPE, sensitive=False):
 			alert("Falha ao executar comando.", "red")
 			exit(1)
 		raise
+
+def set_debug_level(level):
+	global DEBUG
+	DEBUG = level
+
 """
 Copy and Paste
 """

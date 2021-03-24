@@ -64,7 +64,7 @@ def help():
 def main(argv):
     try:
         # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-        opts, args = getopt.getopt(argv,"a:c:d:h:i:n:o:p:r:v:")
+        opts, args = getopt.getopt(argv,"a:c:d:h:n:o:p:v:")
     except getopt.GetoptError:
         help()
     if len(argv) == 0:
@@ -72,13 +72,11 @@ def main(argv):
 
     verb = ""
     apps_repo = ""
-    release_name_override = ""
     release_suffix = ""
     app_properties = ""
     argocd_repo = ""
     ns = ""
-    image_name = ""
-    global DEBUG
+    debug = 0
 
     for opt, arg in opts:
         alert(f"{opt} {arg}", "yellow")
@@ -90,21 +88,19 @@ def main(argv):
             argocd_repo = arg
         elif opt == "-h":
             help()
-        elif opt == "-i":
-            image_name = arg
         elif opt == "-n":
             ns = arg
         elif opt == "-o":
             release_suffix = arg
         elif opt == "-p":
-            DEBUG = arg
-        elif opt == "-r":
-            release_name_override = arg
+            debug = arg
         elif opt == "-v":
             verb = arg
-        else: 
+        else:
             alert ("Parametro incorreto", "red")
             help()
+
+    # TODO Definir variavel de DEBUG global
 
     if not (apps_repo and argocd_repo and app_properties and ns):
         help()
