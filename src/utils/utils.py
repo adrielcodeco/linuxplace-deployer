@@ -19,8 +19,8 @@ def alert(msg, color="white", breakline_before=False):
 	global DEBUG
 
 	PREFIX = ""
-	if breakline_before or color == "red":
-		PREFIX = "\n"
+	#if breakline_before or color == "red":
+	PREFIX = "\n"
 	PREFIX = PREFIX + "|- "
 
 
