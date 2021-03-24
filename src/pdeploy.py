@@ -56,15 +56,15 @@ def init(argocd_repo, apps_repo, ns, need_api_configs=True):
 
 def help():
     # TODO arruamr
-    alert ('usage: deploy.py -v deploy   -n <ns> -a <app_properties> -c <apps_config> -d <argocd_config> ')
-    alert ('       deploy.py -v undeploy -n <ns> -a <app_properties> -c <apps_config> -d <argocd_config> ')
+    alert ('usage: deploy.py -v deploy   -n <ns> -a <app_properties> -c <apps_config> -d <argocd_config> -p <debug> ')
+    alert ('       deploy.py -v undeploy -n <ns> -a <app_properties> -c <apps_config> -d <argocd_config> -p <debug> ')
     sys.exit(1)
 
 
 def main(argv):
     try:
         # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-        opts, args = getopt.getopt(argv,"a:c:d:h:i:n:o:r:v:")
+        opts, args = getopt.getopt(argv,"a:c:d:h:i:n:o:p:r:v:")
     except getopt.GetoptError:
         help()
     if len(argv) == 0:
@@ -79,10 +79,9 @@ def main(argv):
     ns = ""
     image_name = ""
     global DEBUG
-    DEBUG = get_env_var("DEBUG")
 
     for opt, arg in opts:
-        alert(f"{opt} {arg}")
+        alert(f"{opt} {arg}", "yellow")
         if opt == "-a":
             app_properties = arg
         elif opt == "-c":
@@ -97,12 +96,14 @@ def main(argv):
             ns = arg
         elif opt == "-o":
             release_suffix = arg
+        elif opt == "-p":
+            DEBUG = arg
         elif opt == "-r":
             release_name_override = arg
         elif opt == "-v":
             verb = arg
         else: 
-            alert ("parametro incorreto", "red")
+            alert ("Parametro incorreto", "red")
             help()
 
     if not (apps_repo and argocd_repo and app_properties and ns):
