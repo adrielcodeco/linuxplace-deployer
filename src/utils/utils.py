@@ -3,7 +3,6 @@ import os, sys, getopt, shlex, re
 from subprocess import PIPE, Popen
 import json, boto3
 from shutil import copyfile, rmtree
-from utils.constants import *
 
 """
 Imprime mensgens na tela em formatos coloridos
@@ -19,6 +18,7 @@ def alert(msg, color="white"):
 	global DEBUG
 	PREFIX = "# "
 	if color == "yellow" and DEBUG >= 1:
+
 		print(f"{AMARELO}{PREFIX}DEBUG {msg}{DEFAULT}") #yellow
 	elif color == "magenta":
 		print(f"{MAGENTA}{PREFIX}{msg}{DEFAULT}") #magenta

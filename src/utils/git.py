@@ -6,7 +6,6 @@ from utils.constants import *
 def init_git():
 	info = f"[user]\n\tname = LxP Deployer\n\temail = suporte@linuxplace.com.br"
 	save_into_file("/root/.gitconfig", info)
-	# command("git config --global user.email \"suporte@linuxplace.com.br\"; git config --global user.name \"LxP Deployer\"")
 
 def fetch_repo(repo, path, branch="master"):
 	alert(f"Clonando repo {repo} em {path}", "yellow")

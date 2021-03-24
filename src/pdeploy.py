@@ -106,9 +106,6 @@ def main(argv):
             alert ("Parametro incorreto", "red")
             help()
 
-    #TODO remover
-    DEBUG = 0
-
     if not (apps_repo and argocd_repo and app_properties and ns):
         help()
         exit(1)

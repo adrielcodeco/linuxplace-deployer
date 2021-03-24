@@ -1,4 +1,3 @@
-
 """ Variaveis Globais"""
 # Path para clone do helm chart
 LOCAL_PATH_CHART = "./curr_chart"
@@ -13,10 +12,7 @@ RELEASE_STATUS = {}
 AWS_ACCOUNT_ID = ""
 # Repositorio
 REPOSITORY = ""
-# TAG
-TAG = ""
 HELM_TIMEOUT = "20s"
 DEPLOY_TIMEOUT = 300
 PIPE_TIMEOUT = "1000"
-CI_PROJECT_PATH = ""
-DEBUG = 1
+DEBUG = 0
