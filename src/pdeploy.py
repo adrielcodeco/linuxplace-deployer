@@ -78,6 +78,8 @@ def main(argv):
     argocd_repo = ""
     ns = ""
     image_name = ""
+    global DEBUG
+    DEBUG = get_env_var("DEBUG")
 
     for opt, arg in opts:
         alert(f"{opt} {arg}")
@@ -120,6 +122,6 @@ def main(argv):
         alert ("verbo inexistente", "red")
         help()
 
-    alert(f"# Job Finalizado com sucesso", "green")
+    alert(f"Job Finalizado com sucesso", "green")
 if __name__ == '__main__':
     main(sys.argv[1:])

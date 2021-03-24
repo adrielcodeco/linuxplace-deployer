@@ -19,7 +19,7 @@ class Deploy:
 
     def create_app_config_tag_name(self):
         tag_name = f"{self.release_name}-{self.ns}-{self.CI_COMMIT_SHORT_SHA}"
-        alert(f"# Tag name: {tag_name}", "yellow")
+        alert(f"Tag name: {tag_name}", "yellow")
         return tag_name
 
     def __init__(self, release_suffix, app_properties, ns):
@@ -33,9 +33,9 @@ class Deploy:
         self.release_name = self.set_release_name(release_suffix)
         self.tag_name = self.create_app_config_tag_name()
 
-        alert(f"# Microsservico: {self.release_name} no ambiente {self.ns}")
-        alert(f"# Tag name: {self.tag_name}")
-        alert(f"# Instancia construida", "green")
+        alert(f"Microsservico: {self.release_name} no ambiente {self.ns}")
+        alert(f"Tag name: {self.tag_name}")
+        alert(f"Instancia construida", "green")
 
     def set_release_name(self, release_suffix):
         api_version = self.api_version
@@ -51,10 +51,10 @@ class Deploy:
 
     def verify_empty_applications_map(self, values_path):
         names = get_yq(values_path, 'applications[*].name')
-        alert(f"# Lista do .applications\n{names}", "yellow")
+        alert(f"Lista do .applications\n{names}", "yellow")
         if names == "":
             delete_yq(values_path, "applications")
-            alert(f"# Mapa .applications removido", "yellow")
+            alert(f"Mapa .applications removido", "yellow")
 
     def delete_app_config(self):
         alert(f"\n# Iniciando configuracao do App Config Repo")
@@ -66,10 +66,10 @@ class Deploy:
         add_and_commit(f"UnDeploy {self.release_name} {self.ns}")
         ok, ret = push(rebase=True)
         if not ok:
-            alert(f"# Erro ao executar push")
+            alert(f"Erro ao executar push")
             exit(1)
         chdir(old_path)
-        alert(f"# Repositorio App Config configurado")
+        alert(f"Repositorio App Config configurado")
 
     def there_is_tag_ms_config(self):
         old_path = pwd()
@@ -82,7 +82,7 @@ class Deploy:
             tag(self.tag_name)
             ok, out = push(f"Deploy {self.release_name} {self.ns}")
             if not ok:
-                alert(f"# Erro ao executar push")
+                alert(f"Erro ao executar push")
                 exit(1)
 
         chdir(old_path)
@@ -98,24 +98,24 @@ class Deploy:
         alert(f"\n# Iniciando configuracao do App Config Repo", "green")
         # Checa se ja existe tag no repo api_configs
         if self.ns != "dev":
-            alert("# Checando tag no repositorio api_configs")
+            alert("Checando tag no repositorio api_configs")
             self.there_is_tag_ms_config()
         else:
-            alert("# Ambiente dev nao utiliza repositorio api_configs, pulando checagem de tag")
+            alert("Ambiente dev nao utiliza repositorio api_configs, pulando checagem de tag")
         old_path = pwd()
         chdir(f"{LOCAL_PATH_APPS}")
 
         if there_is_this_tag(self.tag_name):
             git_checkout(self.tag_name)
             # Checa se existe algum deploy ja com essa tag pois pode ser uma tag de deploy antigo
-            alert(f"# Deploy encontrado no historico de tags do repositorio app-config, reutilizando ({self.tag_name})", )
+            alert(f"Deploy encontrado no historico de tags do repositorio app-config, reutilizando ({self.tag_name})", )
         else:
             mkdir(f"{self.ns}/{self.release_name}")
             if self.ns == "dev":
                 copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
             else:
-                alert(f"# Deploy nao encontrado no historico de tags do repositorio app-config, criando uma tag nova ({self.tag_name})")
-                alert(f"# Copiando values.yaml do {LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml")
+                alert(f"Deploy nao encontrado no historico de tags do repositorio app-config, criando uma tag nova ({self.tag_name})")
+                alert(f"Copiando values.yaml do {LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml")
                 copia_e_cola(f"../{LOCAL_PATH_MS_CONFIG}/{self.basename}/{self.ns}/kubernetes/values.yaml",
                              f"{self.ns}/{self.release_name}/values.yaml")
 
@@ -126,10 +126,10 @@ class Deploy:
             tag(self.tag_name)
             ok, ret = push(rebase=True)
             if not ok:
-                alert(f"# Erro ao executar push")
+                alert(f"Erro ao executar push")
                 exit(1)
         chdir(old_path)
-        alert(f"# Repositorio App Config configurado", "green")
+        alert(f"Repositorio App Config configurado", "green")
 
     def delete_argocd_config(self):
         alert(f"\n# Iniciando configuracao do ArgoCD Repo", "green")
@@ -147,11 +147,11 @@ class Deploy:
         add_and_commit(f"UnDeploy {self.release_name} {self.ns}")
         ok, ret = push(rebase=True)
         if not ok:
-            alert(f"# Erro ao executar push")
+            alert(f"Erro ao executar push")
             exit(1)
 
         chdir(old_path)
-        alert(f"# ArgoCD Repo configurado", "green")
+        alert(f"ArgoCD Repo configurado", "green")
 
     def add_argocd_config(self):
         alert(f"\n# Iniciando configuracao do ArgoCD Repo", "green")
@@ -178,17 +178,17 @@ class Deploy:
         add_and_commit(f"Deploy {self.release_name} {self.ns}")
         ok, ret = push(rebase=True)
         if not ok:
-            alert(f"# Erro ao executar push")
+            alert(f"Erro ao executar push")
             exit(1)
         chdir(old_path)
-        alert(f"# ArgoCD Repo configurado", "green")
+        alert(f"ArgoCD Repo configurado", "green")
 
     def sync(self):
         alert(f"\n# Iniciando ArgoCD Sync", "yellow")
         general_flags = f"--insecure --server {self.ARGOCD_SERVER} --auth-token {self.ARGOCD_AUTH_TOKEN}"
-        alert("# Executando ArgoCD Sync")
+        alert("Executando ArgoCD Sync")
         command(f"argocd app sync {self.ns}-apps --prune {general_flags}")
-        alert(f"# Para verificar o status, faca login no U4CRYPTO-SHARED-CLUSTER, execute o comando abaixo para verificar "
+        alert(f"Para verificar o status, faca login no U4CRYPTO-SHARED-CLUSTER, execute o comando abaixo para verificar "
               f"o status do Deploy, e depois abra no seu navegador o endereco https://localhost:8080/", "yellow")
         alert(f"$ kubectl port-forward svc/argocd-server -n argocd 8080:443", "yellow")
 

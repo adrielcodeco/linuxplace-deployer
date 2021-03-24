@@ -7,17 +7,31 @@ from shutil import copyfile, rmtree
 """
 Imprime mensgens na tela em formatos coloridos
 """
-def alert(msg, color="white"):
-	if color == "yellow":
-		print(f"\033[93m{msg}\033[0m") #yellow
+def alert(msg, color="white", breakline_before=False):
+	DEFAULT  = "\033[0m"
+	NEGRITO  = "\033[1m"
+	AMARELO  = "\033[93m"
+	MAGENTA  = "\033[95m"
+	VERMELHO = "\033[91m"
+	VERDE    = "\033[92m"
+	BRANCO   = "\033[37m"
+
+	PREFIX = ""
+	if breakline_before or color == "red":
+		PREFIX = "\n"
+	PREFIX = PREFIX + "# "
+
+
+	if color == "yellow" and DEBUG >= 1:
+		print(f"{AMARELO}{PREFIX}DEBUG {msg}{DEFAULT}") #yellow
 	elif color == "magenta":
-		print(f"\033[95m{msg}\033[0m") #magenta
+		print(f"{MAGENTA}{PREFIX}{msg}{DEFAULT}") #magenta
 	elif color == "red":
-		print(f"\033[91m\033[1m{msg}\033[0m") #red and bold
+		print(f"{VERMELHO}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #red and bold
 	elif color == "green":
-		print(f"\033[92m\033[1m{msg}\033[0m") #green and bold
+		print(f"{VERDE}{NEGRITO}{PREFIX}{msg}{DEFAULT}") #green and bold
 	else: # white
-		print(f"\033[37m{msg}\033[0m") #green
+		print(f"{BRANCO}{PREFIX}{msg}{DEFAULT}")
 
 """
 Executa comandos de sistemas
@@ -33,7 +47,7 @@ def command(command, output=PIPE, sensitive=False):
 			if run.returncode == 0:
 				return True, out[:-1].decode("utf-8")
 			else:
-				alert(f"# O comando '{cmd}' retornou o erro {err}", "red")
+				alert(f"O comando '{cmd}' retornou o erro {err}", "red")
 				return False, err[:-1].decode("utf-8")
 		else:
 			with open(output, "a") as standard_out:
@@ -44,15 +58,15 @@ def command(command, output=PIPE, sensitive=False):
 				if run.returncode == 0:
 					return True
 				else:
-					alert(f"# Falha ao executar comando {cmd}, erro: {err}", "red")
+					alert(f"Falha ao executar comando {cmd}, erro: {err}", "red")
 					exit(1)
 	except NameError as e:
-		alert(f"\n# Erro ao executar {cmd}", "red")
+		alert(f"Erro ao executar {cmd}", "red")
 		alert(e, "red")
 		exit(1)
 	except:
 		if sensitive:
-			alert("# Falha ao executar comando.", "red")
+			alert("Falha ao executar comando.", "red")
 			exit(1)
 		raise
 """
@@ -168,18 +182,18 @@ def chdir(path, imprime=True):
 	try:
 		os.chdir(path)
 		if imprime:
-			alert(f"# Diretorio alterado para {os.getcwd()}", "yellow")
+			alert(f"Diretorio alterado para {os.getcwd()}", "yellow")
 	except:
-		alert(f"# Erro ao trocar para o diretorio {path}", "red")
+		alert(f"#Erro ao trocar para o diretorio {path}", "red")
 		raise
 
 def get_env_var(var_name):
 	try:
 		var = os.environ[var_name]
-		alert(f"# Variavel {var_name} recuperada", "yellow")
+		alert(f"Variavel {var_name} recuperada", "yellow")
 		return var
 	except:
-		alert(f"# Variavel {var_name} nao recuperada", "red")
+		alert(f"Variavel {var_name} nao recuperada", "red")
 		raise
 
 def get_aws_account_id():
