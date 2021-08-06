@@ -163,6 +163,7 @@ class Deploy:
                 if self.microservice == "":
                     copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
                 else:
+                    alert(f"Executando copia de values do package {self.microservice} de dentro do projeto", "yellow")
                     copia_e_cola(f"../{self.microservice}/kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
             else:
                 # Se for de hml ou prd, copia do repositorio api_config
