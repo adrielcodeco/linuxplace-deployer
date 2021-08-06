@@ -14,6 +14,7 @@ class Deploy:
     pod_name = ""
     events = {}
     ns = ""
+    microservice = ""
     CI_COMMIT_SHORT_SHA = ""
     tag_name = ""
     ARGOCD_AUTH_TOKEN = ""
@@ -158,7 +159,10 @@ class Deploy:
             # Se for da branch dev
             if self.ns == "dev":
                 # copia o arquivo values.yaml de dentro do proprio projeto
-                copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
+                if self.microservice == "":
+                    copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
+                else:
+                    copia_e_cola(f"../{self.microservice}/kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
             else:
                 # Se for de hml ou prd, copia do repositorio api_config
                 alert(f"Deploy nao encontrado no historico de tags do repositorio app-config, criando uma tag nova ({self.tag_name})")
