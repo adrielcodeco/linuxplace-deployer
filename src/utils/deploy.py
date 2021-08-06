@@ -31,10 +31,11 @@ class Deploy:
     """
     Instancia a classe do deploy com as informacoes basicas
     """
-    def __init__(self, release_suffix, app_properties, ns):
+    def __init__(self, release_suffix, app_properties, ns, microservice=""):
         alert(f"Instanciando o Deploy")
 
         self.ns = ns
+        self.microservice = microservice
         self.basename =    get_yq(app_properties, "basename")
         self.api_version = get_yq(app_properties, "apiVersion")
         self.group =       get_yq(app_properties, "group")

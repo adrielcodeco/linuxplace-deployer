@@ -69,7 +69,7 @@ Metodo Main
 def main(argv):
     try:
         # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-        opts, args = getopt.getopt(argv,"a:c:d:h:n:o:p:v:")
+        opts, args = getopt.getopt(argv,"a:c:d:h:n:o:p:v:m:")
     except getopt.GetoptError:
         help()
     if len(argv) == 0:
@@ -81,6 +81,7 @@ def main(argv):
     app_properties = ""
     argocd_repo = ""
     ns = ""
+    microservice = ""
     debug = 0
 
     # pega os arquivos passados por parametro
@@ -102,6 +103,8 @@ def main(argv):
             debug = arg
         elif opt == "-v":
             verb = arg
+        elif opt == "-m":
+            microservice = arg
         else:
             alert ("Parametro incorreto", "red")
             help()
@@ -118,7 +121,7 @@ def main(argv):
         # Define as configuracoes basicas
         init(argocd_repo, apps_repo, ns)
         # Instancia o Deploy
-        deploy = Deploy(release_suffix, app_properties, ns)
+        deploy = Deploy(release_suffix, app_properties, ns, microservice)
         # Executa o comando de deploy
         deploy.deploy_argocd()
     elif verb == "undeploy":
