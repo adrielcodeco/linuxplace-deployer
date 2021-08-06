@@ -55,8 +55,10 @@ class Deploy:
         api_version = self.api_version
         app_name = self.basename
         if not release_suffix:
+            alert(f"release_suffix nao definido", "yellow")
             suffix = get_yq(f"{LOCAL_PATH_APPS}/ms-chart/Chart.yaml", "name")
         else:
+            alert(f"release_suffix definido {release_suffix}", "yellow")
             suffix = release_suffix
         return f"{api_version}-{app_name}-{suffix}"
 
