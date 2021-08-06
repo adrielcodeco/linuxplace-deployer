@@ -69,7 +69,7 @@ Metodo Main
 def main(argv):
     try:
         # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-        opts, args = getopt.getopt(argv,"a:c:d:h:n:o:p:v:m:")
+        opts, args = getopt.getopt(argv,"a:c:d:h:n:o:p:v:m:i:")
     except getopt.GetoptError:
         help()
     if len(argv) == 0:
@@ -121,7 +121,7 @@ def main(argv):
         # Define as configuracoes basicas
         init(argocd_repo, apps_repo, ns)
         # Instancia o Deploy
-        deploy = Deploy(release_suffix, app_properties, ns, microservice)
+        deploy = Deploy(release_suffix, app_properties, ns, microservice, image_tag)
         # Executa o comando de deploy
         deploy.deploy_argocd()
     elif verb == "undeploy":

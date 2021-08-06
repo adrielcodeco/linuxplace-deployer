@@ -127,10 +127,15 @@ class Deploy:
     # TODO Conferir
     def set_cd_vars(self, file):
         set_yq(file, "cd.commit", get_env_var("CI_COMMIT_SHA"))
+        set_yq(file, "cd.commit_short", get_env_var("CI_COMMIT_SHORT_SHA"))
         set_yq(file, "cd.branch", get_env_var("CI_COMMIT_REF_NAME"))
         set_yq(file, "cd.basename", self.basename)
         set_yq(file, "cd.reponame", get_env_var("CI_PROJECT_NAME"))
         set_yq(file, "cd.group", self.group)
+
+    def set_image_vars(self, file):
+        set_yq(file, "image.tag", get_env_var("CI_COMMIT_SHORT_SHA"))
+        set_yq(file, "image.repository", f"{get_env_var("registry")}/{self.basename}")
 
     """
     Cria uma nova configuracao no repositorio app_config com o values.yaml
@@ -178,6 +183,8 @@ class Deploy:
             set_yq(f"{self.ns}/{self.release_name}-{self.ns}/values.yaml", "AwsAccountId", get_aws_account_id())
             # Adiciona informacoes de CD no values
             self.set_cd_vars(f"{self.ns}/{self.release_name}-{self.ns}/values.yaml")
+            # configura a imagem e tag dentro do values.yaml
+            self.set_image_vars(f"{self.ns}/{self.release_name}-{self.ns}/values.yaml")
             # Publica as alteracoes
             add_and_commit(f"Deploy {self.release_name} {self.ns}")
             tag(self.tag_name)
