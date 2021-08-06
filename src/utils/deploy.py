@@ -135,7 +135,7 @@ class Deploy:
 
     def set_image_vars(self, file):
         set_yq(file, "image.tag", get_env_var("CI_COMMIT_SHORT_SHA"))
-        set_yq(file, "image.repository", f"{get_env_var("registry")}/{self.basename}")
+        set_yq(file, "image.repository", get_env_var("registry")+f"/{self.basename}")
 
     """
     Cria uma nova configuracao no repositorio app_config com o values.yaml
