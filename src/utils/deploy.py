@@ -89,7 +89,7 @@ class Deploy:
         chdir(f"{LOCAL_PATH_APPS}")
 
         # remove o direotorio inteiro
-        rmdir(f"{self.ns}/{self.release_name}")
+        rmdir(f"{self.ns}/{self.release_name}-{self.ns}")
 
         # publica as alteracoes
         add_and_commit(f"UnDeploy {self.release_name} {self.ns}")
@@ -175,9 +175,9 @@ class Deploy:
                              f"{self.ns}/{self.release_name}/values.yaml")
 
             # adiciona o account id no values
-            set_yq(f"{self.ns}/{self.release_name}/values.yaml", "AwsAccountId", get_aws_account_id())
+            set_yq(f"{self.ns}/{self.release_name}-{self.ns}/values.yaml", "AwsAccountId", get_aws_account_id())
             # Adiciona informacoes de CD no values
-            self.set_cd_vars(f"{self.ns}/{self.release_name}/values.yaml")
+            self.set_cd_vars(f"{self.ns}/{self.release_name}-{self.ns}/values.yaml")
             # Publica as alteracoes
             add_and_commit(f"Deploy {self.release_name} {self.ns}")
             tag(self.tag_name)
