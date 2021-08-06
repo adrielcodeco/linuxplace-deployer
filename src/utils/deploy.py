@@ -158,15 +158,15 @@ class Deploy:
             alert(f"Deploy encontrado no historico de tags do repositorio app-config, reutilizando ({self.tag_name})", )
         else:
             # caso contrario, cria uma tag nova com informacoes novas
-            mkdir(f"{self.ns}/{self.release_name}")
+            mkdir(f"{self.ns}/{self.release_name}-{self.ns}")
             # Se for da branch dev
             if self.ns == "dev":
                 # copia o arquivo values.yaml de dentro do proprio projeto
                 if self.microservice == "":
-                    copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
+                    copia_e_cola(f"../kubernetes/values.yaml", f"{self.ns}/{self.release_name}-{self.ns}/values.yaml")
                 else:
                     alert(f"Executando copia de values do package {self.microservice} de dentro do projeto", "yellow")
-                    copia_e_cola(f"../packages/{self.microservice}/kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
+                    copia_e_cola(f"../packages/{self.microservice}-{self.ns}/kubernetes/values.yaml", f"{self.ns}/{self.release_name}/values.yaml")
             else:
                 # Se for de hml ou prd, copia do repositorio api_config
                 alert(f"Deploy nao encontrado no historico de tags do repositorio app-config, criando uma tag nova ({self.tag_name})")
