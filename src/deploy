@@ -307,7 +307,7 @@ function helmdeploy(){
   # Executar o helm upgrade em background ele tem timeout
   # executar o showlogs tbm
   echo  -e "===========================\nInstalando.....\n"
-  helm upgrade --install -f ./ci.values.yaml  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
+  helm upgrade --install --debug --force -f ./ci.values.yaml  -f ./kubernetes/values.yaml $release_name ${LOCAL_PATH_CHART} --namespace ${NAMESPACE} --wait --timeout $HELM_TIMEOUT
 
   helm_ret=$?
 
